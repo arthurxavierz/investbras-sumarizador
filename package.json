@@ -1,0 +1,16 @@
+{
+  "name": "investbras-intelligence",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Central diaria de inteligencia de mercado da Investbras: cafe, cambio, commodities e agenda economica.",
+  "scripts": {
+    "dev": "npx netlify-cli dev",
+    "build": "node scripts/validate-static.js",
+    "check": "node scripts/validate-static.js",
+    "og": "node scripts/make-og.js",
+    "secret": "node -e \"console.log(require('crypto').randomBytes(48).toString('base64url'))\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

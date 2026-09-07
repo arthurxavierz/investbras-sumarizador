@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0C0B09">
+  <title>Mesa | Investbras Intelligence</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body class="admin">
+  <!-- Portao de acesso. O conteudo do painel so entra no DOM apos a sessao. -->
+  <div class="gate" id="gate" hidden>
+    <div class="gate-card">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">IB</span>
+        <span class="brand-name"><strong>INVESTBRAS</strong><small>INTELLIGENCE</small></span>
+      </a>
+
+      <h1>Acesso da mesa</h1>
+      <p>Area restrita a equipe editorial. A sessao expira em 12 horas.</p>
+
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="login-email">E-mail</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="login-password">Senha</label>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="button button-accent" type="submit" id="login-submit">Entrar</button>
+        <small class="form-feedback" id="login-feedback" role="status"></small>
+      </form>
+
+      <a class="gate-back" href="/">Voltar para a area publica</a>
+    </div>
+  </div>
+
+  <div class="console" id="console" hidden>
+    <aside class="side">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">IB</span>
+        <span class="brand-name"><strong>INVESTBRAS</strong><small>INTELLIGENCE</small></span>
+      </a>
+
+      <nav aria-label="Secoes do painel">
+        <a href="#pipeline">Producao</a>
+        <a href="#editor">Editor</a>
+        <a href="#distribuicao">Distribuicao</a>
+        <a href="#saude">Infraestrutura</a>
+      </nav>
+
+      <div class="side-foot">
+        <div class="operator">
+          <span class="operator-avatar" id="operator-initial" aria-hidden="true">--</span>
+          <div>
+            <strong id="operator-name">Operador</strong>
+            <small id="operator-email">sessao ativa</small>
+          </div>
+        </div>
+        <button class="ghost-button" id="logout" type="button">Encerrar sessao</button>
+        <a class="ghost-button" href="/" target="_blank" rel="noopener">Ver area publica</a>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="workspace-top">
+        <div>
+          <p class="eyebrow">Mesa de publicacao <span id="admin-date"></span></p>
+          <h1>Giro do dia</h1>
+        </div>
+        <div class="top-actions">
+          <span class="status-pill" id="edition-state">Rascunho local</span>
+          <button class="button button-accent" id="generate" type="button">Gerar rascunho</button>
+        </div>
+      </header>
+
+      <section class="metrics" id="pipeline" aria-label="Indicadores da operacao">
+        <article><span class="label">Status da edicao</span><strong id="metric-status">--</strong><small id="metric-status-detail">Verificando</small></article>
+        <article><span class="label">Cotacoes ativas</span><strong id="metric-assets">--</strong><small>Fontes de mercado</small></article>
+        <article><span class="label">Materias</span><strong id="metric-news">--</strong><small>No feed do dia</small></article>
+        <article><span class="label">Inscritos ativos</span><strong id="metric-subs">--</strong><small id="metric-subs-detail">Base de e-mail</small></article>
+      </section>
+
+      <div class="generation-note" id="generation-note" hidden></div>
+
+      <div class="panel-grid">
+        <section class="panel" id="editor">
+          <header class="panel-head">
+            <h2>Editor da edicao</h2>
+            <span class="section-meta" id="autosave-state">Sem alteracoes</span>
+          </header>
+
+          <form id="report-form" class="report-form">
+            <div class="field">
+              <label for="f-title">Titulo</label>
+              <input id="f-title" name="title" value="Giro do mercado Investbras" maxlength="180" required>
+            </div>
+
+            <div class="field">
+              <label for="f-summary">Resumo <span class="hint">abre a edicao na area publica</span></label>
+              <textarea id="f-summary" name="summary" rows="3" maxlength="1200" required placeholder="O contexto principal do dia em duas ou tres frases."></textarea>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="f-coffee">Cafe</label>
+                <textarea id="f-coffee" name="coffee" rows="6" placeholder="Contrato, cambio, clima, oferta e demanda."></textarea>
+              </div>
+              <div class="field">
+                <label for="f-brazil">Brasil</label>
+                <textarea id="f-brazil" name="brazil" rows="6" placeholder="Cambio, bolsa, juros, fiscal e fluxo."></textarea>
+              </div>
+              <div class="field">
+                <label for="f-global">Exterior</label>
+                <textarea id="f-global" name="global" rows="6" placeholder="Asia, Europa, Estados Unidos e apetite a risco."></textarea>
+              </div>
+              <div class="field">
+                <label for="f-commodities">Commodities</label>
+                <textarea id="f-commodities" name="commodities" rows="6" placeholder="Acucar, petroleo, ouro, soja e milho."></textarea>
+              </div>
+              <div class="field">
+                <label for="f-geopolitics">Geopolitica e cadeia</label>
+                <textarea id="f-geopolitics" name="geopolitics" rows="6" placeholder="Energia, fretes, fertilizantes e eventos relevantes."></textarea>
+              </div>
+              <div class="field">
+                <label for="f-agenda">Agenda</label>
+                <textarea id="f-agenda" name="agenda" rows="6" placeholder="Fed, Copom, IBGE, USDA e demais divulgacoes."></textarea>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="f-notes">Observacoes internas <span class="hint">nao vai para a area publica</span></label>
+              <textarea id="f-notes" name="notes" rows="3" placeholder="Pontos de checagem antes de publicar."></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button class="button button-quiet" id="save-draft" type="button">Salvar rascunho</button>
+              <button class="button button-quiet" id="copy-report" type="button">Copiar texto</button>
+              <button class="button button-danger" id="unpublish" type="button">Despublicar</button>
+              <button class="button button-accent" id="publish" type="button">Publicar edicao</button>
+            </div>
+            <small class="form-feedback" id="editor-feedback" role="status"></small>
+          </form>
+        </section>
+
+        <aside class="stack">
+          <section class="panel" id="saude">
+            <header class="panel-head">
+              <h2>Infraestrutura</h2>
+              <button class="ghost-button small" id="health-refresh" type="button">Verificar</button>
+            </header>
+            <div class="check-list" id="check-list"></div>
+          </section>
+
+          <section class="panel">
+            <header class="panel-head">
+              <h2>Previa publica</h2>
+            </header>
+            <article class="preview" id="preview">
+              <span class="label">Sem conteudo</span>
+              <p>Preencha o editor ou gere um rascunho para ver a previa.</p>
+            </article>
+          </section>
+        </aside>
+      </div>
+
+      <section class="panel" id="distribuicao">
+        <header class="panel-head">
+          <h2>Distribuicao por e-mail</h2>
+          <span class="section-meta" id="email-provider">Provedor nao verificado</span>
+        </header>
+
+        <div class="email-grid">
+          <div class="field">
+            <label for="email-subject">Assunto</label>
+            <input id="email-subject" maxlength="160" value="Investbras Intelligence - giro do mercado">
+          </div>
+
+          <div class="email-actions">
+            <button class="button button-quiet" id="send-test" type="button">Enviar teste para mim</button>
+            <button class="button button-accent" id="send-campaign" type="button">Disparar para a base</button>
+          </div>
+        </div>
+
+        <small class="form-feedback" id="email-feedback" role="status"></small>
+
+        <div class="history" id="campaign-history">
+          <div class="empty-state">Nenhum disparo registrado.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/admin.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /.netlify/functions/
+
+Sitemap: https://investbras.achillesmedia.com.br/sitemap.xml

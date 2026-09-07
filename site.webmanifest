@@ -1,0 +1,13 @@
+{
+  "name": "Investbras Intelligence",
+  "short_name": "Investbras",
+  "description": "Central diaria de mercado de cafe, cambio e commodities.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0C0B09",
+  "theme_color": "#0C0B09",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
