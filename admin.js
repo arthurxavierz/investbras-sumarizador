@@ -95,10 +95,55 @@ const readJson = key => {
 
 /* ------------------------------------------------------------------ sessao */
 
+const gateStatus = (tone, title, detail) => {
+  const node = $('#gate-status');
+  if (!node) return;
+  node.hidden = false;
+  node.dataset.tone = tone;
+  node.innerHTML = '<strong>' + escapeHtml(title) + '</strong>' + detail;
+};
+
+/**
+ * Sem isso, um ambiente mal configurado apenas recusa o login sem dizer por que.
+ * O health check e publico, entao da para explicar o problema antes da tentativa.
+ */
+const diagnoseGate = async () => {
+  try {
+    const response = await fetch(API.health);
+    const checks = (await response.json()).data?.checks || {};
+
+    if (!checks.session?.ok) {
+      gateStatus('down', 'Falta configurar o ambiente',
+        'A variavel <code>SESSION_SECRET</code> nao esta definida. '
+        + 'Gere uma com <code>npm run secret</code> e cadastre no Netlify em '
+        + 'Site configuration, Environment variables.');
+      return;
+    }
+
+    if (!checks.auth?.ok) {
+      gateStatus('down', 'Nenhum acesso cadastrado',
+        'Defina <code>ADMIN_EMAIL</code> e <code>ADMIN_PASSWORD</code> (minimo 10 caracteres) '
+        + 'no ambiente, ou configure <code>SUPABASE_ANON_KEY</code> para usar o Supabase Auth.');
+      return;
+    }
+
+    if (!checks.database?.ok) {
+      gateStatus('warn', 'Painel liberado, banco pendente',
+        'Voce consegue entrar e gerar rascunho. Sem Supabase, a publicacao fica apenas '
+        + 'neste navegador em vez de ir para a area publica.');
+    }
+  } catch {
+    gateStatus('down', 'Functions fora do ar',
+      'A camada server-side nao respondeu. Em desenvolvimento, rode <code>npm run dev</code> '
+      + 'em vez de abrir o arquivo direto no navegador.');
+  }
+};
+
 const showGate = message => {
   $('#gate').hidden = false;
   $('#console').hidden = true;
   if (message) say('#login-feedback', message, 'error');
+  diagnoseGate();
 };
 
 const showConsole = () => {
@@ -286,9 +331,8 @@ const generate = async () => {
   const note = $('#generation-note');
   button.disabled = true;
   button.textContent = 'Consultando fontes';
-  note.hidden = false;
   note.dataset.tone = '';
-  note.textContent = 'Buscando cotacoes, noticias e agenda.';
+  note.textContent = 'Buscando cotacoes, noticias e agenda...';
 
   try {
     const response = await authFetch(API.generate, { method: 'POST' });
@@ -308,10 +352,11 @@ const generate = async () => {
     }
 
     const inputs = payload.data?.inputs || {};
-    note.dataset.tone = payload.data?.mode === 'deterministico' ? '' : '';
-    note.textContent = (payload.message || 'Rascunho gerado.')
-      + ' Entradas: ' + (inputs.availableAssets || 0) + ' cotacoes, '
-      + (inputs.newsItems || 0) + ' materias, ' + (inputs.agendaItems || 0) + ' eventos.';
+    note.dataset.tone = 'ok';
+    note.textContent = 'Gerado as ' + formatDateTime() + ' com '
+      + (inputs.availableAssets || 0) + '/' + (inputs.totalAssets || 0) + ' cotacoes, '
+      + (inputs.newsItems || 0) + ' materias e ' + (inputs.agendaItems || 0) + ' eventos. '
+      + (payload.data?.mode === 'deterministico' ? 'Modo tecnico.' : 'Interpretado por IA.')
 
     say('#editor-feedback', 'Rascunho carregado no editor. Revise antes de publicar.', 'ok');
   } catch (error) {
@@ -321,7 +366,7 @@ const generate = async () => {
     }
   } finally {
     button.disabled = false;
-    button.textContent = 'Gerar rascunho';
+    button.textContent = 'Gerar rascunho do dia';
   }
 };
 

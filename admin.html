@@ -38,6 +38,8 @@
         <small class="form-feedback" id="login-feedback" role="status"></small>
       </form>
 
+      <div class="gate-status" id="gate-status" hidden></div>
+
       <a class="gate-back" href="/">Voltar para a area publica</a>
     </div>
   </div>
@@ -77,18 +79,28 @@
         </div>
         <div class="top-actions">
           <span class="status-pill" id="edition-state">Rascunho local</span>
-          <button class="button button-accent" id="generate" type="button">Gerar rascunho</button>
         </div>
       </header>
 
-      <section class="metrics" id="pipeline" aria-label="Indicadores da operacao">
+      <section class="production" id="pipeline">
+        <div class="production-copy">
+          <h2>Passo 1: gerar o rascunho</h2>
+          <p>
+            As Functions consultam cotacoes, noticias e agenda agora e montam o texto no editor abaixo.
+            Com chave de IA a leitura vem interpretada; sem chave, vem com os numeros organizados.
+            Nada e publicado por este botao.
+          </p>
+          <p class="production-status" id="generation-note">Nenhuma geracao executada nesta sessao.</p>
+        </div>
+        <button class="button button-accent production-action" id="generate" type="button">Gerar rascunho do dia</button>
+      </section>
+
+      <section class="metrics" aria-label="Indicadores da operacao">
         <article><span class="label">Status da edicao</span><strong id="metric-status">--</strong><small id="metric-status-detail">Verificando</small></article>
         <article><span class="label">Cotacoes ativas</span><strong id="metric-assets">--</strong><small>Fontes de mercado</small></article>
         <article><span class="label">Materias</span><strong id="metric-news">--</strong><small>No feed do dia</small></article>
         <article><span class="label">Inscritos ativos</span><strong id="metric-subs">--</strong><small id="metric-subs-detail">Base de e-mail</small></article>
       </section>
-
-      <div class="generation-note" id="generation-note" hidden></div>
 
       <div class="panel-grid">
         <section class="panel" id="editor">
