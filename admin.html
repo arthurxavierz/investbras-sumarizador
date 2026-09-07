@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/admin.css">
 </head>
-<body class="admin">
+<body class="admin" data-view="gate">
   <!-- Portao de acesso. O conteudo do painel so entra no DOM apos a sessao. -->
   <div class="gate" id="gate" hidden>
     <div class="gate-card">
@@ -44,7 +44,7 @@
     </div>
   </div>
 
-  <div class="console" id="console" hidden>
+  <div class="console" id="console" hidden inert>
     <aside class="side">
       <a class="brand" href="/">
         <span class="brand-mark" aria-hidden="true">IB</span>

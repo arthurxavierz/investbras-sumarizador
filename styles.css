@@ -43,6 +43,13 @@
 
 * { box-sizing: border-box; }
 
+/**
+ * O [hidden] do navegador tem a mesma especificidade de uma classe, e regra de
+ * autor vence a do navegador no empate. Sem este !important, qualquer
+ * `display` declarado em classe faz o elemento reaparecer mesmo com hidden.
+ */
+[hidden] { display: none !important; }
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 92px;

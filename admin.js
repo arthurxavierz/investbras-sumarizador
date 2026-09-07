@@ -139,17 +139,30 @@ const diagnoseGate = async () => {
   }
 };
 
+/**
+ * Visibilidade do painel em tres camadas: atributo hidden, marcador no body e
+ * inert. Uma falha de CSS nao pode ser suficiente para expor a area interna.
+ */
+const setView = view => {
+  const gate = $('#gate');
+  const console_ = $('#console');
+  const open = view === 'console';
+
+  document.body.dataset.view = view;
+
+  gate.hidden = open;
+  gate.inert = open;
+  console_.hidden = !open;
+  console_.inert = !open;
+};
+
 const showGate = message => {
-  $('#gate').hidden = false;
-  $('#console').hidden = true;
+  setView('gate');
   if (message) say('#login-feedback', message, 'error');
   diagnoseGate();
 };
 
-const showConsole = () => {
-  $('#gate').hidden = true;
-  $('#console').hidden = false;
-};
+const showConsole = () => setView('console');
 
 const endSession = message => {
   sessionStorage.removeItem(STORAGE.token);

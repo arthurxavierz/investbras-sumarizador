@@ -2,6 +2,11 @@
 
 body.admin { background: var(--bg-inset); }
 
+/* Segunda barreira: o portao e o console nunca coexistem, mesmo se o atributo
+   hidden falhar por qualquer motivo. */
+body[data-view="gate"] #console,
+body[data-view="console"] #gate { display: none !important; }
+
 /* Portao de acesso -------------------------------------------------------- */
 
 .gate {
