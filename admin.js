@@ -93,6 +93,35 @@ const readJson = key => {
   }
 };
 
+/** Notificacao de canto. Some sozinha, mas aceita fechar antes. */
+const toast = (tone, title, detail) => {
+  const host = $('#toasts');
+  if (!host) return;
+
+  const node = document.createElement('div');
+  node.className = 'toast';
+  node.dataset.tone = tone;
+  node.innerHTML = '<div><strong>' + escapeHtml(title) + '</strong>'
+    + (detail ? '<small>' + escapeHtml(detail) + '</small>' : '') + '</div>';
+
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'toast-close';
+  close.setAttribute('aria-label', 'Fechar notificacao');
+  close.textContent = '×';
+  node.appendChild(close);
+
+  const remove = () => {
+    if (!node.isConnected) return;
+    node.classList.add('is-leaving');
+    setTimeout(() => node.remove(), 260);
+  };
+
+  close.addEventListener('click', remove);
+  host.appendChild(node);
+  setTimeout(remove, tone === 'error' ? 8000 : 5000);
+};
+
 /* ------------------------------------------------------------------ sessao */
 
 const gateStatus = (tone, title, detail) => {
@@ -140,34 +169,44 @@ const diagnoseGate = async () => {
 };
 
 /**
- * Visibilidade do painel em tres camadas: atributo hidden, marcador no body e
- * inert. Uma falha de CSS nao pode ser suficiente para expor a area interna.
+ * Visibilidade em tres camadas: atributo hidden, marcador no body e inert.
+ * Uma falha de CSS nao pode ser suficiente para expor a area interna.
  */
 const setView = view => {
-  const gate = $('#gate');
-  const console_ = $('#console');
-  const open = view === 'console';
-
+  const screens = { booting: $('#booting'), gate: $('#gate'), console: $('#console') };
   document.body.dataset.view = view;
 
-  gate.hidden = open;
-  gate.inert = open;
-  console_.hidden = !open;
-  console_.inert = !open;
+  for (const key of Object.keys(screens)) {
+    const node = screens[key];
+    if (!node) continue;
+    const active = key === view;
+    node.hidden = !active;
+    node.inert = !active;
+  }
+
+  // Trocar de tela sem voltar ao topo deixa o operador no meio do painel,
+  // sem sinal de que algo mudou. Aqui a rolagem e sempre seca, nunca animada.
+  window.scrollTo({ top: 0, behavior: 'instant' });
 };
 
 const showGate = message => {
   setView('gate');
   if (message) say('#login-feedback', message, 'error');
+  $('#login-email')?.focus();
   diagnoseGate();
 };
 
-const showConsole = () => setView('console');
+const showConsole = () => {
+  setView('console');
+  $('#workspace-title')?.focus();
+};
 
 const endSession = message => {
+  const had = Boolean(sessionStorage.getItem(STORAGE.token));
   sessionStorage.removeItem(STORAGE.token);
   session = null;
   showGate(message);
+  if (had && message) toast('info', 'Sessao encerrada', message);
 };
 
 const applySession = user => {
@@ -211,6 +250,12 @@ const login = async event => {
     $('#login-form').reset();
     showConsole();
     bootConsole();
+
+    const user = payload.data.user;
+    const until = payload.data.expiresAt
+      ? ' Sessao ativa ate ' + formatDateTime(payload.data.expiresAt) + '.'
+      : '';
+    toast('ok', 'Bem-vindo, ' + (user.name || user.email), 'Painel liberado.' + until);
   } catch {
     say('#login-feedback', 'Sem conexao com o servidor de autenticacao.', 'error');
   } finally {
@@ -285,6 +330,8 @@ const persist = async action => {
 
     if (response.ok) {
       say('#editor-feedback', payload.message || 'Edicao salva.', 'ok');
+      const titles = { draft: 'Rascunho salvo', publish: 'Edicao publicada', unpublish: 'Edicao despublicada' };
+      toast('ok', titles[action], payload.message || '');
       saveLocal();
       if (action === 'publish') {
         localStorage.setItem(STORAGE.published, JSON.stringify({ ...data, publishedAt: new Date().toISOString(), author: session?.name }));
@@ -311,8 +358,12 @@ const persist = async action => {
     }
 
     say('#editor-feedback', payload.error || 'Nao foi possivel salvar.', 'error');
+    toast('error', 'Nao foi possivel salvar', payload.error || '');
   } catch (error) {
-    if (error.message !== 'Sessao expirada') say('#editor-feedback', 'Falha de conexao ao salvar.', 'error');
+    if (error.message !== 'Sessao expirada') {
+      say('#editor-feedback', 'Falha de conexao ao salvar.', 'error');
+      toast('error', 'Falha de conexao', 'As Functions nao responderam ao salvar.');
+    }
   } finally {
     buttons.forEach(button => { if (button) button.disabled = false; });
   }
@@ -332,6 +383,7 @@ const copyReport = async () => {
   try {
     await navigator.clipboard.writeText(reportText());
     say('#editor-feedback', 'Texto copiado para a area de transferencia.', 'ok');
+    toast('ok', 'Texto copiado', 'A edicao inteira foi para a area de transferencia.');
   } catch {
     say('#editor-feedback', 'O navegador bloqueou o acesso a area de transferencia.', 'error');
   }
@@ -354,6 +406,7 @@ const generate = async () => {
     if (!response.ok) {
       note.dataset.tone = 'error';
       note.textContent = payload.error || 'Nao foi possivel gerar o rascunho.';
+      toast('error', 'Geracao interrompida', payload.error || '');
       return;
     }
 
@@ -372,10 +425,15 @@ const generate = async () => {
       + (payload.data?.mode === 'deterministico' ? 'Modo tecnico.' : 'Interpretado por IA.')
 
     say('#editor-feedback', 'Rascunho carregado no editor. Revise antes de publicar.', 'ok');
+    toast('ok', 'Rascunho pronto',
+      (inputs.availableAssets || 0) + ' cotacoes, ' + (inputs.newsItems || 0) + ' materias e '
+      + (inputs.agendaItems || 0) + ' eventos. Revise antes de publicar.');
+    $('#f-summary')?.focus();
   } catch (error) {
     if (error.message !== 'Sessao expirada') {
       note.dataset.tone = 'error';
       note.textContent = 'Falha de conexao com as Functions.';
+      toast('error', 'Falha de conexao', 'As Functions nao responderam.');
     }
   } finally {
     button.disabled = false;
@@ -545,6 +603,9 @@ const sendEmail = async isTest => {
     });
     const payload = await response.json();
     say('#email-feedback', payload.message || payload.error || 'Disparo processado.', response.ok ? 'ok' : 'error');
+    toast(response.ok ? 'ok' : 'error',
+      response.ok ? (isTest ? 'Teste enviado' : 'Disparo concluido') : 'Disparo nao concluido',
+      payload.message || payload.error || '');
     if (response.ok) loadCounters();
   } catch (error) {
     if (error.message !== 'Sessao expirada') say('#email-feedback', 'Falha de conexao no disparo.', 'error');
@@ -600,6 +661,7 @@ const bootConsole = () => {
 
 const boot = async () => {
   $('#login-form')?.addEventListener('submit', login);
+  setView('loading');
 
   if (!token()) {
     showGate();

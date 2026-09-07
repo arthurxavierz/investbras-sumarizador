@@ -2,10 +2,107 @@
 
 body.admin { background: var(--bg-inset); }
 
-/* Segunda barreira: o portao e o console nunca coexistem, mesmo se o atributo
-   hidden falhar por qualquer motivo. */
+/* Segunda barreira: as tres telas nunca coexistem, mesmo se o atributo hidden
+   falhar por qualquer motivo. */
+body[data-view="loading"] #gate,
+body[data-view="loading"] #console,
 body[data-view="gate"] #console,
-body[data-view="console"] #gate { display: none !important; }
+body[data-view="gate"] #booting,
+body[data-view="console"] #gate,
+body[data-view="console"] #booting { display: none !important; }
+
+/* Verificacao de sessao --------------------------------------------------- */
+
+.booting {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  color: var(--txt-dim);
+  font-size: 13px;
+}
+
+.booting-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r);
+  background: var(--gold);
+  color: #151310;
+  font-family: var(--display);
+  font-size: 19px;
+  animation: booting-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes booting-pulse {
+  50% { opacity: .42; }
+}
+
+/* Notificacoes ------------------------------------------------------------ */
+
+.toasts {
+  position: fixed;
+  z-index: 80;
+  inset-block-end: 20px;
+  inset-inline-end: 20px;
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 40px));
+  pointer-events: none;
+}
+
+.toast {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 14px 14px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: var(--bg-raised);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .5);
+  pointer-events: auto;
+  animation: toast-in .32s var(--ease);
+}
+
+.toast::before {
+  content: "";
+  width: 3px;
+  height: 100%;
+  min-height: 26px;
+  border-radius: 2px;
+  background: var(--gold);
+}
+
+.toast[data-tone="ok"]::before { background: var(--up); }
+.toast[data-tone="error"]::before { background: var(--down); }
+
+.toast strong { display: block; font-size: 13.5px; font-weight: 600; }
+.toast small { display: block; margin-top: 3px; font-size: 12px; color: var(--txt-muted); line-height: 1.5; }
+
+.toast-close {
+  padding: 0 2px;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--txt-dim);
+}
+
+.toast-close:hover { color: var(--txt); }
+.toast.is-leaving { animation: toast-out .26s var(--ease) forwards; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+}
+
+@keyframes toast-out {
+  to { opacity: 0; transform: translateX(16px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booting-mark, .toast, .toast.is-leaving { animation: none; }
+}
 
 /* Portao de acesso -------------------------------------------------------- */
 
@@ -336,6 +433,10 @@ body[data-view="console"] #gate { display: none !important; }
   .production-action { justify-self: start; }
   .panel-grid { grid-template-columns: minmax(0, 1fr); }
   .field-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 620px) {
+  .toasts { inset-inline: 12px; inset-block-end: 12px; width: auto; }
 }
 
 @media (max-width: 860px) {
