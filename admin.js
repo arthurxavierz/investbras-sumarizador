@@ -9,6 +9,7 @@ const API = {
   me: '/.netlify/functions/auth-me',
   health: '/.netlify/functions/health',
   data: '/.netlify/functions/market-data',
+  physical: '/.netlify/functions/market-physical',
   news: '/.netlify/functions/market-news',
   generate: '/.netlify/functions/generate-report',
   reportSave: '/.netlify/functions/report-save',
@@ -25,10 +26,11 @@ const STORAGE = {
   published: 'investbras-published-report'
 };
 
-const SECTIONS = ['coffee', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
+const SECTIONS = ['coffee', 'weather', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
 
 const SECTION_LABELS = {
   coffee: 'Cafe',
+  weather: 'Lavoura e clima',
   brazil: 'Brasil',
   global: 'Exterior',
   commodities: 'Commodities',
@@ -571,6 +573,75 @@ const loadHealth = async () => {
   }
 };
 
+/* ------------------------------------------------------------ card do dia */
+
+let cardBlobUrl = null;
+
+/**
+ * Monta o card com os dados do momento. Espera as fontes da marca carregarem:
+ * sem isso o canvas desenha na fonte de sistema e o resultado sai errado.
+ */
+const renderCard = async () => {
+  const button = $('#card-render');
+  const canvas = $('#card-canvas');
+  const download = $('#card-download');
+  if (!window.InvestbrasCard || !canvas) return;
+
+  button.disabled = true;
+  button.textContent = 'Montando';
+  say('#card-feedback', 'Buscando cotacoes, preco fisico e clima...');
+
+  try {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
+    const [dataResponse, physicalResponse] = await Promise.all([
+      fetch(API.data),
+      fetch(API.physical)
+    ]);
+    const market = (await dataResponse.json()).data || {};
+    const physical = (await physicalResponse.json()).data || {};
+
+    const form = formData();
+    const editionDate = new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo'
+    }).format(new Date());
+
+    window.InvestbrasCard.render(canvas, {
+      editionDate,
+      title: form.title || 'Giro do mercado Investbras',
+      summary: form.summary || '',
+      coffee: market.coffee,
+      assets: market.assets || [],
+      bagEquivalents: market.bagEquivalents || [],
+      physicalArabica: physical.physicalArabica || null,
+      weather: physical.weather || []
+    }, $('#card-format').value);
+
+    canvas.classList.add('is-ready');
+    $('#card-hint').hidden = true;
+
+    const blob = await window.InvestbrasCard.toBlob(canvas);
+    if (cardBlobUrl) URL.revokeObjectURL(cardBlobUrl);
+    cardBlobUrl = URL.createObjectURL(blob);
+
+    const format = window.InvestbrasCard.FORMATS[$('#card-format').value];
+    const stamp = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    download.href = cardBlobUrl;
+    download.download = 'investbras-' + format.name + '-' + stamp + '.jpg';
+    download.classList.add('is-ready');
+
+    const size = Math.round(blob.size / 1024);
+    say('#card-feedback', format.width + ' x ' + format.height + ', ' + size + ' kB. Pronto para baixar.', 'ok');
+    toast('ok', 'Card gerado', format.width + ' x ' + format.height + ' com os dados do momento.');
+  } catch (error) {
+    say('#card-feedback', 'Nao foi possivel montar o card agora.', 'error');
+    toast('error', 'Card nao gerado', error.message || '');
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Gerar previa';
+  }
+};
+
 /* ------------------------------------------------------------- inscritos */
 
 const STATUS_LABEL = { active: 'Ativo', unsubscribed: 'Saiu', bounced: 'Retorno' };
@@ -841,6 +912,13 @@ const bootConsole = () => {
   $('#unpublish')?.addEventListener('click', () => persist('unpublish'));
   $('#copy-report')?.addEventListener('click', copyReport);
   $('#health-refresh')?.addEventListener('click', loadHealth);
+  $('#card-render')?.addEventListener('click', renderCard);
+  $('#card-format')?.addEventListener('change', () => {
+    $('#card-canvas').classList.remove('is-ready');
+    $('#card-download').classList.remove('is-ready');
+    $('#card-hint').hidden = false;
+    say('#card-feedback', '');
+  });
   $('#preview-email')?.addEventListener('click', previewEmail);
   $('#send-test')?.addEventListener('click', () => sendEmail(true));
   $('#send-campaign')?.addEventListener('click', () => sendEmail(false));

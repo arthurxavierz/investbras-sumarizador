@@ -152,12 +152,20 @@ const bcbDate = offsetDays => {
   return mm + '-' + dd + '-' + date.getUTCFullYear();
 };
 
+/**
+ * O BCB so publica PTAX em dia util. Em feriado prolongado a busca anda para
+ * tras varios dias, e sem um teto isso somava ate 48 segundos de espera,
+ * bem alem do limite da Function. O laco agora tem prazo proprio.
+ */
 const fetchPtax = async () => {
+  const deadline = Date.now() + 7000;
+
   for (let offset = 0; offset < 8; offset += 1) {
+    if (Date.now() > deadline) break;
     const url = 'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)'
       + '?@dataCotacao=%27' + bcbDate(offset) + '%27&$top=1&$format=json';
     try {
-      const response = await timeoutFetch(url, {}, 6000);
+      const response = await timeoutFetch(url, {}, 3000);
       if (!response.ok) continue;
       const body = await response.json();
       const quote = body && body.value && body.value[0];

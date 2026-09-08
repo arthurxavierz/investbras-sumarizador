@@ -18,20 +18,35 @@ Basta subir o site. Estes blocos usam fontes publicas e nao dependem de chave:
 | Acucar, petroleo WTI, ouro, soja, milho | ICE, NYMEX, COMEX e CBOT via Yahoo Finance |
 | Dolar PTAX | Banco Central do Brasil (Olinda) |
 | Selic meta e IPCA do mes | Banco Central do Brasil (SGS) |
+| Cafe arabica e robusta no fisico | Indicadores CEPEA/ESALQ |
+| Acucar cristal SP e boi gordo | Indicadores CEPEA/ESALQ |
+| Clima nas pracas produtoras | Open-Meteo, sem chave |
 | Agenda economica | Calendario oficial de divulgacoes do IBGE |
 | Noticias | Canal Rural, InfoMoney, Money Times, Agrolink, G1 agro, G1 mundo, Agencia Brasil e quatro buscas tematicas |
 
-### Equivalencia em R$ por saca
+### Bolsa contra fisico
 
-O diferencial da pagina e a conversao da bolsa para a unidade que a mesa negocia:
+O bloco central da pagina compara duas leituras da mesma saca:
 
 ```text
-R$/saca 60 kg = (cotacao em c/lb / 100) x 132,2774 lb x dolar
+Bolsa convertida = (cotacao em c/lb / 100) x 132,2774 lb x dolar
+Fisico           = indicador CEPEA/ESALQ do dia
+Diferenca        = fisico menos bolsa convertida
 ```
 
-Sao as duas cotacoes reais multiplicadas, nada mais. A interface deixa explicito que
-o resultado **nao** inclui diferencial, tipo, bebida, frete ou impostos. Isso e
-referencia de bolsa, nao preco de mercado fisico.
+A conversao usa apenas duas cotacoes reais multiplicadas, e a interface deixa
+explicito que ela **nao** inclui diferencial, tipo, bebida, frete ou impostos.
+O CEPEA entra como o outro lado da conta: quanto a saca vale de fato no Brasil.
+
+A diferenca entre os dois numeros e o que a mesa negocia, e ela so aparece quando
+as duas leituras chegam na mesma consulta.
+
+### Clima nas pracas produtoras
+
+Quatro pracas acompanhadas pelo Open-Meteo, sem chave de API: Sul de Minas,
+Cerrado Mineiro, Mogiana e Espirito Santo. A pagina mostra chuva prevista para
+sete dias, minima do periodo e classificacao de risco de geada, com o limiar
+declarado na resposta em vez de escondido no codigo.
 
 ## O que precisa de configuracao
 
@@ -64,6 +79,19 @@ feed inteiro: 6 cafe, 5 commodities, 4 geopolitica, 3 energia, 3 cambio e
 
 Sem Supabase configurado, a funcao publica faz a coleta ao vivo com orcamento
 curto. Funciona, mas com menos capas resolvidas.
+
+## Card do dia
+
+O painel gera um card consolidado em JPG, desenhado em canvas com as fontes da
+marca, em dois formatos:
+
+- **Post** 1920 x 1080
+- **Story** 1080 x 1920
+
+O card reune manchete e resumo da edicao, preco do arabica na bolsa com a serie
+de cinco pregoes, a comparacao entre bolsa e fisico, as cotacoes de apoio e o
+clima das pracas. Todo numero vem das Functions no momento da geracao: dado
+ausente aparece como indisponivel, nunca some.
 
 ## Instalacao
 
@@ -181,6 +209,7 @@ investbras-market-static/
   styles.css            tokens e area publica
   admin.css             console interno
   app.js                cotacoes, graficos SVG, noticias, agenda, newsletter
+  card.js               gerador do card em canvas, post e story
   admin.js              sessao, editor, publicacao, disparo
   favicon.svg
   og-investbras.png     cartao social 1200x630, gerado por script
@@ -196,6 +225,7 @@ investbras-market-static/
     _email.js           modelo do e-mail, usado por disparo e simulador
     auth-login.js  auth-me.js
     market-data.js  market-news.js  market-agenda.js  news-image.js
+    market-physical.js  indicadores CEPEA e clima das pracas produtoras
     cron-news.js        coleta agendada a cada 20 minutos
     generate-report.js  report.js  report-save.js
     subscribe.js  unsubscribe.js  subscribers.js
@@ -220,6 +250,12 @@ investbras-market-static/
   do proprio Google. Por isso a coleta nao tenta buscar capa nesses itens, e usa
   o `<source url>` do RSS para identificar o veiculo real e montar a miniatura
   de marca. Os portais diretos entregam foto e texto proprios.
+- **CEPEA.** Os indicadores vem do widget publico do site. O arabica e o numero
+  central do produto, entao ele tenta tres vezes antes de desistir, contra duas
+  dos demais. O CEPEA publica uma vez por dia, entao o cache e de 30 minutos.
+- **PTAX em feriado.** O Banco Central so publica em dia util. A busca anda para
+  tras dia a dia, e agora tem prazo proprio de 7 segundos: sem esse teto um
+  feriado prolongado podia somar 48 segundos e estourar o limite da Function.
 - **Agenda.** O IBGE ja vem ligado. Para somar Copom, Fed ou USDA, adicione os links
   `.ics` em `AGENDA_ICS_URLS`, separados por virgula.
 - **Foto.** O visual da pagina e construido sobre os proprios dados. Se a Investbras

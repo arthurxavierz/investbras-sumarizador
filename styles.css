@@ -596,6 +596,88 @@ p { margin: 0; }
   color: var(--txt-dim);
 }
 
+/* Bolsa contra fisico ----------------------------------------------------- */
+
+.spread-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 18px;
+  background: rgba(216, 175, 88, .18);
+  border: 1px solid rgba(216, 175, 88, .18);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.spread-cell {
+  display: grid;
+  gap: 5px;
+  padding: 15px 14px;
+  background: var(--bg-panel);
+}
+
+.spread-cell .label { color: var(--gold); }
+.spread-cell strong { font-size: 19px; font-weight: 500; letter-spacing: -.02em; }
+.spread-cell small { font-size: 10.5px; color: var(--txt-dim); line-height: 1.45; }
+
+/* Clima das pracas -------------------------------------------------------- */
+
+.weather-strip {
+  margin-top: clamp(28px, 3vw, 44px);
+  padding-top: clamp(24px, 3vw, 34px);
+  border-top: 1px solid var(--line);
+}
+
+.weather-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.weather-head h3 { font-size: 15px; }
+
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.weather-cell {
+  display: grid;
+  gap: 8px;
+  padding: 16px 16px 18px;
+  background: var(--bg);
+}
+
+.weather-cell header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.weather-cell h4 { margin: 0; font-size: 13.5px; font-weight: 600; }
+.weather-cell .crop { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--txt-dim); }
+
+.weather-metrics { display: flex; gap: 18px; flex-wrap: wrap; }
+.weather-metrics div { display: grid; gap: 2px; }
+.weather-metrics span { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--txt-dim); }
+.weather-metrics strong { font-family: var(--mono); font-size: 15px; font-weight: 500; }
+
+.frost {
+  justify-self: start;
+  padding: 3px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  font-size: 10.5px;
+  color: var(--txt-dim);
+}
+
+.frost[data-risk="observar"] { border-color: var(--gold-dim); color: var(--gold); }
+.frost[data-risk="atencao"] { border-color: var(--gold); color: var(--gold-bright); }
+.frost[data-risk="severo"] { border-color: var(--down); color: var(--down); }
+
 /* Grade de mercados ------------------------------------------------------- */
 
 .market-grid {
@@ -982,6 +1064,7 @@ p { margin: 0; }
 /* Responsivo -------------------------------------------------------------- */
 
 @media (max-width: 1080px) {
+  .weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .news-leads { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .news-leads > :last-child { grid-column: 1 / -1; }
 
@@ -1009,6 +1092,8 @@ p { margin: 0; }
   html { scroll-padding-top: 80px; }
   .news-leads { grid-template-columns: minmax(0, 1fr); }
   .news-leads > :last-child { grid-column: auto; }
+  .weather-grid,
+  .spread-grid { grid-template-columns: minmax(0, 1fr); }
   .section { padding-block: 44px; }
   .news-card { grid-template-columns: 84px minmax(0, 1fr); gap: 14px; }
   .news-thumb { width: 84px; height: 62px; }

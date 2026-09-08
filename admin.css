@@ -406,6 +406,46 @@ body[data-view="console"] #booting { display: none !important; }
 .preview h3 { font-size: 18px; }
 .preview p { font-size: 13px; color: var(--txt-muted); line-height: 1.6; }
 
+/* Card do dia -------------------------------------------------------------- */
+
+.card-tools {
+  display: grid;
+  grid-template-columns: 220px auto auto;
+  gap: 12px;
+  align-items: end;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.card-stage { margin-top: 18px; }
+
+#card-canvas {
+  display: none;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg-inset);
+}
+
+#card-canvas.is-ready { display: block; }
+
+.card-hint {
+  padding: 22px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r);
+  color: var(--txt-dim);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+#card-download {
+  pointer-events: none;
+  opacity: .45;
+}
+
+#card-download.is-ready { pointer-events: auto; opacity: 1; }
+
 /* Inscritos --------------------------------------------------------------- */
 
 .subs-add {
@@ -536,7 +576,8 @@ body[data-view="console"] #booting { display: none !important; }
   .side-foot .ghost-button:last-child { display: none; }
   .email-grid { grid-template-columns: minmax(0, 1fr); }
   .subs-add,
-  .subs-filters { grid-template-columns: minmax(0, 1fr); }
+  .subs-filters,
+  .card-tools { grid-template-columns: minmax(0, 1fr); }
   .subs-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .subs-actions { justify-content: flex-start; }
   .history-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }

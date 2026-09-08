@@ -25,6 +25,7 @@ const tokenFor = email => crypto
 
 const SECTION_LABELS = [
   ['coffee', 'Cafe'],
+  ['weather', 'Lavoura e clima'],
   ['brazil', 'Brasil'],
   ['global', 'Exterior'],
   ['commodities', 'Commodities'],

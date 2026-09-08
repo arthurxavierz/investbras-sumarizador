@@ -4,7 +4,7 @@ const { json, preflight, fail, httpError, requireMethod, readBody, text, hasSupa
 const { requireSession } = require('./_auth');
 const reportEndpoint = require('./report');
 
-const SECTION_FIELDS = ['coffee', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
+const SECTION_FIELDS = ['coffee', 'weather', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
 
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
 

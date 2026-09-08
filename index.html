@@ -172,15 +172,43 @@
             </dl>
 
             <div class="convert-block">
-              <h3>Equivalencia por saca de 60 kg</h3>
-              <p class="source-note tight">Bolsa convertida pelo dolar do momento. Nao inclui diferencial, tipo, bebida, frete nem impostos.</p>
-              <div class="convert-list" id="convert-list">
-                <div class="empty-state">Aguardando cotacao e cambio.</div>
+              <h3>Saca de 60 kg: bolsa contra fisico</h3>
+              <p class="source-note tight">
+                A bolsa de Nova York diz quanto vale o contrato. O CEPEA diz quanto vale a saca aqui.
+                A diferenca entre as duas leituras e o que a mesa negocia.
+              </p>
+
+              <div class="spread-grid" id="spread-grid">
+                <div class="spread-cell">
+                  <span class="label">Bolsa convertida</span>
+                  <strong class="num" id="spread-converted">--</strong>
+                  <small id="spread-converted-note">Aguardando cotacao e cambio</small>
+                </div>
+                <div class="spread-cell">
+                  <span class="label">Fisico CEPEA</span>
+                  <strong class="num" id="spread-physical">--</strong>
+                  <small id="spread-physical-note">Aguardando indicador</small>
+                </div>
+                <div class="spread-cell">
+                  <span class="label">Diferenca</span>
+                  <strong class="num delta" id="spread-difference" data-dir="flat">--</strong>
+                  <small id="spread-difference-note">Fisico menos bolsa convertida</small>
+                </div>
               </div>
+
+              <div class="convert-list" id="convert-list"></div>
             </div>
 
             <p class="source-note" id="coffee-source">Fonte ainda nao conectada nesta sessao.</p>
           </div>
+        </div>
+
+        <div class="weather-strip" id="weather-strip" hidden>
+          <div class="weather-head">
+            <h3>Clima nas pracas produtoras</h3>
+            <span class="section-meta">Chuva acumulada e minima prevista para sete dias</span>
+          </div>
+          <div class="weather-grid" id="weather-grid"></div>
         </div>
       </div>
     </section>

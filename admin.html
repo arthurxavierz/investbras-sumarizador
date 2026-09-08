@@ -61,6 +61,7 @@
       <nav aria-label="Secoes do painel">
         <a href="#pipeline">Producao</a>
         <a href="#editor">Editor</a>
+        <a href="#card">Card</a>
         <a href="#inscritos">Inscritos</a>
         <a href="#distribuicao">Distribuicao</a>
         <a href="#saude">Infraestrutura</a>
@@ -134,6 +135,10 @@
                 <textarea id="f-coffee" name="coffee" rows="6" placeholder="Contrato, cambio, clima, oferta e demanda."></textarea>
               </div>
               <div class="field">
+                <label for="f-weather">Lavoura e clima</label>
+                <textarea id="f-weather" name="weather" rows="6" placeholder="Chuva, geada e estagio da safra nas pracas produtoras."></textarea>
+              </div>
+              <div class="field">
                 <label for="f-brazil">Brasil</label>
                 <textarea id="f-brazil" name="brazil" rows="6" placeholder="Cambio, bolsa, juros, fiscal e fluxo."></textarea>
               </div>
@@ -190,6 +195,35 @@
           </section>
         </aside>
       </div>
+
+      <section class="panel" id="card">
+        <header class="panel-head">
+          <h2>Card do dia</h2>
+          <span class="section-meta" id="card-meta">Consolida cotacao, fisico e clima</span>
+        </header>
+
+        <div class="card-tools">
+          <div class="field">
+            <label for="card-format">Formato</label>
+            <select id="card-format">
+              <option value="landscape">Post 1920 x 1080</option>
+              <option value="portrait">Story 1080 x 1920</option>
+            </select>
+          </div>
+          <button class="button button-quiet" id="card-render" type="button">Gerar previa</button>
+          <a class="button button-accent" id="card-download" download>Baixar JPG</a>
+        </div>
+
+        <small class="form-feedback" id="card-feedback" role="status"></small>
+
+        <div class="card-stage" id="card-stage">
+          <canvas id="card-canvas" aria-label="Previa do card de mercado"></canvas>
+          <p class="card-hint" id="card-hint">
+            O card usa o titulo e o resumo do editor, mais as cotacoes, o preco fisico
+            e o clima do momento. Gere a previa para conferir antes de baixar.
+          </p>
+        </div>
+      </section>
 
       <section class="panel" id="inscritos">
         <header class="panel-head">
@@ -266,6 +300,7 @@
     </main>
   </div>
 
+  <script src="/card.js" defer></script>
   <script src="/admin.js" defer></script>
 </body>
 </html>

@@ -5,8 +5,9 @@ const { requireSession } = require('./_auth');
 const marketData = require('./market-data');
 const marketNews = require('./market-news');
 const marketAgenda = require('./market-agenda');
+const marketPhysical = require('./market-physical');
 
-const SECTIONS = ['coffee', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
+const SECTIONS = ['coffee', 'weather', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
 
 const call = async (handler, forceRefresh) => {
   const response = await handler.handler({ httpMethod: 'GET', headers: {}, forceRefresh });
@@ -37,7 +38,7 @@ const lines = (assets, ids) => ids
   .join('\n');
 
 /** Rascunho deterministico: so reorganiza os numeros que chegaram das fontes. */
-const deterministicDraft = ({ assets, news, agenda, bagEquivalents, macro }) => {
+const deterministicDraft = ({ assets, news, agenda, bagEquivalents, macro, indicators, weather }) => {
   const available = assets.filter(asset => asset.status === 'available');
   const coffee = assets.find(asset => asset.id === 'coffee-c');
   const robusta = assets.find(asset => asset.id === 'coffee-robusta');
@@ -47,14 +48,39 @@ const deterministicDraft = ({ assets, news, agenda, bagEquivalents, macro }) => 
     coffeeLines.push(equivalent.name + ': R$ ' + equivalent.value.toFixed(2) + ' por saca de 60 kg. Calculo: ' + equivalent.formula + '.');
   }
 
+  // Fisico e clima entram como blocos proprios: sao a leitura que a bolsa
+  // sozinha nao da.
+  const available_ = (indicators || []).filter(item => item.status === 'available');
+  const physicalLines = available_.map(item =>
+    item.name + ' (CEPEA): R$ ' + item.value.toFixed(2) + ' por ' + item.unit.replace('BRL/', '')
+    + (item.referenceDate ? ', referencia de ' + item.referenceDate.split('-').reverse().join('/') : ''));
+
+  const arabicaPhysical = available_.find(item => item.key === 'arabica');
+  const converted = bagEquivalents[0];
+  if (arabicaPhysical && converted) {
+    const difference = arabicaPhysical.value - converted.value;
+    physicalLines.push('Diferenca entre fisico e bolsa convertida: R$ ' + difference.toFixed(2)
+      + ' por saca (' + ((difference / converted.value) * 100).toFixed(1) + '%).');
+  }
+
+  const weatherLines = (weather || [])
+    .filter(region => region.status === 'available')
+    .map(region => region.name + ' (' + region.crop + '): ' + region.rainNext7
+      + ' mm previstos em 7 dias, minima de ' + region.minTempNext7 + ' C, geada ' + region.frostRisk + '.');
+
   return {
     title: 'Giro do mercado Investbras',
     summary: available.length
       ? 'Rascunho montado com ' + available.length + ' referencias de mercado disponiveis. Revise contexto, causalidade e risco antes de publicar.'
       : 'Rascunho criado sem cotacoes disponiveis. Conecte as fontes ou escreva manualmente antes de publicar.',
     coffee: coffeeLines.length
-      ? coffeeLines.join('\n') + '\n\nEquivalencias sao conversao direta de bolsa. Diferencial, tipo, bebida e frete entram na leitura da mesa.'
+      ? coffeeLines.join('\n')
+        + (physicalLines.length ? '\n\n' + physicalLines.join('\n') : '')
+        + '\n\nEquivalencias sao conversao direta de bolsa. Diferencial, tipo, bebida e frete entram na leitura da mesa.'
       : 'Cafe indisponivel nesta consulta. Nao publicar valor sem fonte confirmada.',
+    weather: weatherLines.length
+      ? weatherLines.join('\n')
+      : 'Leitura climatica das pracas produtoras indisponivel nesta consulta.',
     brazil: [lines(assets, ['usd-ptax', 'usd-brl', 'ibovespa']), macro.map(item => item.label + ': ' + item.value + ' ' + item.unit + ' (ref. ' + item.reference + ')').join('\n')]
       .filter(Boolean).join('\n') || 'Brasil sem dados suficientes nesta consulta.',
     global: lines(assets, ['sp500', 'nasdaq', 'hang-seng']) || 'Exterior sem dados suficientes nesta consulta.',
@@ -85,14 +111,14 @@ const SYSTEM_PROMPT = [
   'Se um dado estiver ausente, escreva explicitamente que a fonte nao respondeu.',
   'Nao faca recomendacao de compra ou venda. Descreva o que os dados mostram e quais riscos observar.',
   'Cada secao tem no maximo 3 paragrafos curtos. Sem titulos internos, sem listas com marcador, sem emoji.',
-  'Responda apenas com um objeto JSON valido com as chaves: title, summary, coffee, brazil, global, geopolitics, commodities, agenda, notes.'
+  'Responda apenas com um objeto JSON valido com as chaves: title, summary, coffee, weather, brazil, global, geopolitics, commodities, agenda, notes.'
 ].join(' ');
 
 const buildUserPrompt = input => [
   'Data da edicao: ' + new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '.',
   'Dados verificados disponiveis:',
   JSON.stringify(input, null, 2),
-  'Monte o giro do dia com foco em cafe arabica e robusta, depois cambio, bolsas, commodities correlatas, risco geopolitico e agenda.'
+  'Monte o giro do dia com foco em cafe arabica e robusta, incluindo a diferenca entre bolsa e fisico CEPEA, depois clima nas pracas produtoras, cambio, bolsas, commodities correlatas, risco geopolitico e agenda.'
 ].join('\n\n');
 
 const parseAiJson = raw => {
@@ -175,19 +201,23 @@ exports.handler = async event => {
     const payloads = await Promise.all([
       call(marketData, forceRefresh),
       call(marketNews, forceRefresh),
-      call(marketAgenda, forceRefresh)
+      call(marketAgenda, forceRefresh),
+      call(marketPhysical, forceRefresh)
     ]);
     const dataPayload = payloads[0];
     const newsPayload = payloads[1];
     const agendaPayload = payloads[2];
+    const physicalPayload = payloads[3];
 
     const assets = (dataPayload && dataPayload.data && dataPayload.data.assets) || [];
     const news = (newsPayload && newsPayload.data) || [];
     const agenda = (agendaPayload && agendaPayload.data) || [];
     const bagEquivalents = (dataPayload && dataPayload.data && dataPayload.data.bagEquivalents) || [];
     const macro = (dataPayload && dataPayload.data && dataPayload.data.macro) || [];
+    const indicators = (physicalPayload && physicalPayload.data && physicalPayload.data.indicators) || [];
+    const weather = (physicalPayload && physicalPayload.data && physicalPayload.data.weather) || [];
 
-    const context = { assets, news, agenda, bagEquivalents, macro };
+    const context = { assets, news, agenda, bagEquivalents, macro, indicators, weather };
     let draft = deterministicDraft(context);
     let mode = 'deterministico';
     let aiError = null;
@@ -209,6 +239,13 @@ exports.handler = async event => {
           })),
           indisponiveis: assets.filter(asset => asset.status !== 'available').map(asset => asset.name),
           equivalenciasSaca: bagEquivalents,
+          precoFisicoCepea: indicators.filter(item => item.status === 'available').map(item => ({
+            produto: item.name, valor: item.value, unidade: item.unit, referencia: item.referenceDate
+          })),
+          climaPracasProdutoras: weather.filter(region => region.status === 'available').map(region => ({
+            praca: region.name, cultivo: region.crop, chuvaProximos7Dias: region.rainNext7,
+            minimaPrevista: region.minTempNext7, riscoGeada: region.frostRisk
+          })),
           macroBrasil: macro,
           manchetes: news.slice(0, 12).map(item => ({ titulo: item.title, fonte: item.source, tema: item.category })),
           agenda: agenda.slice(0, 10).map(item => ({ dia: item.day, hora: item.time, evento: item.title, fonte: item.source }))

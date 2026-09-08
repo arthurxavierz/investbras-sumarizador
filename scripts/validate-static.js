@@ -19,7 +19,7 @@ const fail = message => problems.push(message);
 
 const REQUIRED = [
   'index.html', 'admin.html', '404.html',
-  'styles.css', 'admin.css', 'app.js', 'admin.js',
+  'styles.css', 'admin.css', 'app.js', 'admin.js', 'card.js',
   'favicon.svg', 'og-investbras.png', 'robots.txt', 'sitemap.xml', 'site.webmanifest',
   'netlify.toml', '.env.example',
   'supabase/migrations/0001_investbras_market.sql',
@@ -44,6 +44,7 @@ const REQUIRED = [
   'netlify/functions/cron-news.js',
   'netlify/functions/_news.js',
   'netlify/functions/_email.js',
+  'netlify/functions/market-physical.js',
   'supabase/migrations/0002_news_and_subscribers.sql'
 ];
 
@@ -58,7 +59,7 @@ if (problems.length) {
 
 /* 2. Sintaxe de todo JavaScript ---------------------------------------- */
 
-const jsFiles = ['app.js', 'admin.js', 'scripts/make-og.js'].concat(
+const jsFiles = ['app.js', 'admin.js', 'card.js', 'scripts/make-og.js'].concat(
   fs.readdirSync(path.join(root, 'netlify/functions'))
     .filter(file => file.endsWith('.js'))
     .map(file => 'netlify/functions/' + file)

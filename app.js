@@ -8,6 +8,7 @@ const API = {
   data: '/.netlify/functions/market-data',
   news: '/.netlify/functions/market-news',
   agenda: '/.netlify/functions/market-agenda',
+  physical: '/.netlify/functions/market-physical',
   report: '/.netlify/functions/report',
   subscribe: '/.netlify/functions/subscribe'
 };
@@ -344,19 +345,111 @@ const renderMacro = macro => {
     + '<small>ref. ' + escapeHtml(item.reference) + '</small></div>').join('');
 };
 
-const renderConversions = equivalents => {
+let convertedBag = null;
+
+/**
+ * Bolsa convertida contra fisico CEPEA. A diferenca entre as duas leituras e
+ * o numero que a mesa realmente usa, e so aparece quando as duas existem.
+ */
+const renderSpread = (equivalents, physical) => {
+  const converted = equivalents && equivalents[0] ? equivalents[0].value : null;
+  convertedBag = converted;
+
+  setText('#spread-converted', isNumber(converted) ? formatBrl(converted) : 'Indisponivel');
+  setText('#spread-converted-note', isNumber(converted)
+    ? 'ICE Nova York pelo dolar do momento'
+    : 'Falta cotacao de bolsa ou de cambio');
+
+  const pending = physical === undefined;
+  const physicalValue = physical ? physical.value : null;
+
+  setText('#spread-physical', isNumber(physicalValue)
+    ? formatBrl(physicalValue)
+    : (pending ? 'Consultando' : 'Indisponivel'));
+  setText('#spread-physical-note', isNumber(physicalValue)
+    ? 'CEPEA/ESALQ, referencia de ' + (physical.referenceDate
+      ? physical.referenceDate.split('-').reverse().join('/')
+      : 'data nao informada')
+    : (pending ? 'Buscando o indicador CEPEA' : 'Indicador CEPEA nao respondeu'));
+
+  const node = $('#spread-difference');
+  if (isNumber(converted) && isNumber(physicalValue)) {
+    const difference = physicalValue - converted;
+    const share = (difference / converted) * 100;
+    setText('#spread-difference', (difference > 0 ? '+' : '') + formatBrl(difference));
+    if (node) node.dataset.dir = direction(difference);
+    setText('#spread-difference-note', 'Fisico ' + formatPercent(share) + ' frente a bolsa convertida');
+  } else {
+    setText('#spread-difference', pending ? 'Calculando' : 'Indisponivel');
+    if (node) node.dataset.dir = 'flat';
+    setText('#spread-difference-note', pending
+      ? 'Depende do indicador fisico'
+      : 'Precisa das duas leituras na mesma consulta');
+  }
+};
+
+/** Indicadores fisicos de apoio, alem do arabica que ja abre o bloco. */
+const renderPhysicalList = indicators => {
   const list = $('#convert-list');
   if (!list) return;
 
-  if (!equivalents || !equivalents.length) {
-    list.innerHTML = '<div class="empty-state">Conversao indisponivel: falta cotacao de bolsa ou de cambio nesta consulta.</div>';
+  const extras = (indicators || []).filter(item => item.key !== 'arabica' && item.status === 'available');
+  if (!extras.length) {
+    list.innerHTML = '';
     return;
   }
 
-  list.innerHTML = equivalents.map(item => '<div class="convert-item">'
-    + '<span>' + escapeHtml(item.name) + '<br><small class="convert-ref">' + escapeHtml(item.reference || '') + '</small></span>'
+  list.innerHTML = extras.map(item => '<div class="convert-item">'
+    + '<span>' + escapeHtml(item.name) + '<br><small class="convert-ref">'
+    + escapeHtml(item.unit || '') + '</small></span>'
     + '<strong>' + escapeHtml(formatBrl(item.value)) + '</strong>'
     + '</div>').join('');
+};
+
+const FROST_LABEL = {
+  'sem risco': 'Sem risco de geada',
+  observar: 'Geada: observar',
+  atencao: 'Geada: atencao',
+  severo: 'Geada: risco severo',
+  desconhecido: 'Geada: sem leitura'
+};
+
+const renderWeather = regions => {
+  const strip = $('#weather-strip');
+  const grid = $('#weather-grid');
+  if (!strip || !grid) return;
+
+  const usable = (regions || []).filter(region => region.status === 'available');
+  if (!usable.length) {
+    strip.hidden = true;
+    return;
+  }
+
+  strip.hidden = false;
+  grid.innerHTML = usable.map(region => '<article class="weather-cell">'
+    + '<header><h4>' + escapeHtml(region.name) + '</h4>'
+    + '<span class="crop">' + escapeHtml(region.crop || '') + '</span></header>'
+    + '<div class="weather-metrics">'
+    + '<div><span>Chuva 7 dias</span><strong>' + escapeHtml(formatQuantity(region.rainNext7, 'mm')) + '</strong></div>'
+    + '<div><span>Minima</span><strong>' + escapeHtml(formatQuantity(region.minTempNext7, 'C')) + '</strong></div>'
+    + '</div>'
+    + '<span class="frost" data-risk="' + escapeHtml(region.frostRisk || 'desconhecido') + '">'
+    + escapeHtml(FROST_LABEL[region.frostRisk] || 'Geada: sem leitura') + '</span>'
+    + '</article>').join('');
+};
+
+const loadPhysical = async () => {
+  try {
+    const response = await fetch(API.physical);
+    const payload = await response.json();
+    const data = payload.data || {};
+    renderSpread(lastEquivalents, data.physicalArabica);
+    renderPhysicalList(data.indicators);
+    renderWeather(data.weather);
+  } catch {
+    renderSpread(lastEquivalents, null);
+    renderWeather([]);
+  }
 };
 
 const renderCoffee = (coffee, usdBrl) => {
@@ -404,6 +497,7 @@ const setFreshness = (state, label) => {
 
 let lastCoffee = null;
 let lastUsd = null;
+let lastEquivalents = [];
 
 const loadMarketData = async () => {
   skeletonGrid();
@@ -416,7 +510,9 @@ const loadMarketData = async () => {
     renderGrid(assets);
     renderTape(assets);
     renderMacro(data.macro);
-    renderConversions(data.bagEquivalents);
+    lastEquivalents = data.bagEquivalents || [];
+    renderSpread(lastEquivalents, undefined);
+    loadPhysical();
 
     lastCoffee = data.coffee;
     lastUsd = data.usdBrlReference;
@@ -438,7 +534,7 @@ const loadMarketData = async () => {
     setFreshness('down', 'Sem conexao com as fontes');
     renderGrid([]);
     renderTape([]);
-    renderConversions([]);
+    renderSpread([], null);
     setText('#sources-meta', 'Camada server-side offline');
     setText('#panel-bag', 'Indisponivel');
   }
@@ -578,6 +674,7 @@ const loadAgenda = async () => {
 
 const EDITION_BLOCKS = [
   ['coffee', 'Cafe'],
+  ['weather', 'Lavoura e clima'],
   ['brazil', 'Brasil'],
   ['global', 'Exterior'],
   ['commodities', 'Commodities'],
