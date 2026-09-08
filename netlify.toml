@@ -6,6 +6,11 @@
 [functions]
   node_bundler = "esbuild"
 
+# Coleta de noticias a cada 20 minutos. Roda fora do caminho do visitante,
+# entao tem folga para abrir cada materia atras de capa e linha fina.
+[functions."cron-news"]
+  schedule = "*/20 * * * *"
+
 [[redirects]]
   from = "/admin"
   to = "/admin.html"

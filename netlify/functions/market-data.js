@@ -320,7 +320,7 @@ exports.handler = async event => {
   if (event.httpMethod === 'OPTIONS') return preflight();
 
   const now = Date.now();
-  if (cache.payload && now - cache.at < CACHE_MS) {
+  if (!event.forceRefresh && cache.payload && now - cache.at < CACHE_MS) {
     return json(200, Object.assign({}, cache.payload, { cached: true }), 60);
   }
 

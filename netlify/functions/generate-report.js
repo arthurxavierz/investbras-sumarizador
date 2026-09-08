@@ -1,6 +1,6 @@
 'use strict';
 
-const { json, preflight, fail, requireMethod, timeoutFetch, log } = require('./_utils');
+const { json, preflight, fail, requireMethod, readBody, timeoutFetch, log } = require('./_utils');
 const { requireSession } = require('./_auth');
 const marketData = require('./market-data');
 const marketNews = require('./market-news');
@@ -8,8 +8,8 @@ const marketAgenda = require('./market-agenda');
 
 const SECTIONS = ['coffee', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
 
-const call = async handler => {
-  const response = await handler.handler({ httpMethod: 'GET', headers: {} });
+const call = async (handler, forceRefresh) => {
+  const response = await handler.handler({ httpMethod: 'GET', headers: {}, forceRefresh });
   try {
     return JSON.parse(response.body || '{}');
   } catch {
@@ -170,7 +170,13 @@ exports.handler = async event => {
     requireMethod(event, ['POST']);
     const session = requireSession(event);
 
-    const payloads = await Promise.all([call(marketData), call(marketNews), call(marketAgenda)]);
+    // O painel pode pedir releitura: ignora o cache quente das tres fontes.
+    const forceRefresh = readBody(event).refresh === true;
+    const payloads = await Promise.all([
+      call(marketData, forceRefresh),
+      call(marketNews, forceRefresh),
+      call(marketAgenda, forceRefresh)
+    ]);
     const dataPayload = payloads[0];
     const newsPayload = payloads[1];
     const agendaPayload = payloads[2];
@@ -239,6 +245,7 @@ exports.handler = async event => {
         draft,
         mode,
         aiError,
+        refreshed: forceRefresh,
         inputs: {
           marketData: (dataPayload && dataPayload.status) || 'unavailable',
           news: (newsPayload && newsPayload.status) || 'unavailable',

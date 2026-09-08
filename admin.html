@@ -61,6 +61,7 @@
       <nav aria-label="Secoes do painel">
         <a href="#pipeline">Producao</a>
         <a href="#editor">Editor</a>
+        <a href="#inscritos">Inscritos</a>
         <a href="#distribuicao">Distribuicao</a>
         <a href="#saude">Infraestrutura</a>
       </nav>
@@ -91,15 +92,15 @@
 
       <section class="production" id="pipeline">
         <div class="production-copy">
-          <h2>Passo 1: gerar o rascunho</h2>
+          <h2>Passo 1: atualizar informacoes</h2>
           <p>
-            As Functions consultam cotacoes, noticias e agenda agora e montam o texto no editor abaixo.
-            Com chave de IA a leitura vem interpretada; sem chave, vem com os numeros organizados.
-            Nada e publicado por este botao.
+            Forca a releitura de cotacoes, noticias e agenda ignorando o cache, e monta o texto no
+            editor abaixo. A area publica ja se atualiza sozinha: este botao serve para trazer tudo
+            agora e comecar a edicao. Nada e publicado aqui.
           </p>
-          <p class="production-status" id="generation-note">Nenhuma geracao executada nesta sessao.</p>
+          <p class="production-status" id="generation-note">Nenhuma atualizacao executada nesta sessao.</p>
         </div>
-        <button class="button button-accent production-action" id="generate" type="button">Gerar rascunho do dia</button>
+        <button class="button button-accent production-action" id="generate" type="button">Atualizar informacoes</button>
       </section>
 
       <section class="metrics" aria-label="Indicadores da operacao">
@@ -190,6 +191,48 @@
         </aside>
       </div>
 
+      <section class="panel" id="inscritos">
+        <header class="panel-head">
+          <h2>Inscritos</h2>
+          <span class="section-meta" id="subs-summary">Carregando base</span>
+        </header>
+
+        <form class="subs-add" id="subs-add-form">
+          <div class="field">
+            <label for="subs-email">E-mail</label>
+            <input id="subs-email" name="email" type="email" autocomplete="off" placeholder="nome@empresa.com.br" required>
+          </div>
+          <div class="field">
+            <label for="subs-name">Nome</label>
+            <input id="subs-name" name="name" type="text" autocomplete="off" placeholder="Opcional">
+          </div>
+          <div class="field">
+            <label for="subs-org">Empresa</label>
+            <input id="subs-org" name="organization" type="text" autocomplete="off" placeholder="Opcional">
+          </div>
+          <button class="button button-accent" type="submit" id="subs-add">Adicionar</button>
+        </form>
+
+        <div class="subs-filters">
+          <div class="field">
+            <label for="subs-search">Buscar</label>
+            <input id="subs-search" type="search" placeholder="E-mail, nome ou empresa">
+          </div>
+          <div class="field">
+            <label for="subs-status">Status</label>
+            <select id="subs-status">
+              <option value="">Todos</option>
+              <option value="active">Ativos</option>
+              <option value="unsubscribed">Descadastrados</option>
+              <option value="bounced">Com retorno</option>
+            </select>
+          </div>
+        </div>
+
+        <small class="form-feedback" id="subs-feedback" role="status"></small>
+        <div class="subs-table" id="subs-list"></div>
+      </section>
+
       <section class="panel" id="distribuicao">
         <header class="panel-head">
           <h2>Distribuicao por e-mail</h2>
@@ -203,12 +246,18 @@
           </div>
 
           <div class="email-actions">
+            <button class="button button-quiet" id="preview-email" type="button">Simular e-mail</button>
             <button class="button button-quiet" id="send-test" type="button">Enviar teste para mim</button>
             <button class="button button-accent" id="send-campaign" type="button">Disparar para a base</button>
           </div>
         </div>
 
         <small class="form-feedback" id="email-feedback" role="status"></small>
+
+        <form class="preview-form" id="preview-form" method="POST"
+              action="/.netlify/functions/campaign-preview" target="_blank" hidden>
+          <input type="hidden" name="payload" id="preview-payload">
+        </form>
 
         <div class="history" id="campaign-history">
           <div class="empty-state">Nenhum disparo registrado.</div>

@@ -19,7 +19,7 @@ Basta subir o site. Estes blocos usam fontes publicas e nao dependem de chave:
 | Dolar PTAX | Banco Central do Brasil (Olinda) |
 | Selic meta e IPCA do mes | Banco Central do Brasil (SGS) |
 | Agenda economica | Calendario oficial de divulgacoes do IBGE |
-| Noticias | Busca dedicada a cafe, Agencia Brasil, Canal Rural, Money Times e InfoMoney |
+| Noticias | Canal Rural, InfoMoney, Money Times, Agrolink, G1 agro, G1 mundo, Agencia Brasil e quatro buscas tematicas |
 
 ### Equivalencia em R$ por saca
 
@@ -43,6 +43,27 @@ referencia de bolsa, nao preco de mercado fisico.
 | Leitura assistida por IA | `OPENAI_API_KEY` ou `GEMINI_API_KEY` | O rascunho sai em modo tecnico, so com os numeros |
 
 Nenhuma dessas ausencias quebra a pagina publica.
+
+## Como as noticias chegam
+
+A coleta nao roda no caminho do visitante. Uma funcao agendada (`cron-news`)
+executa a cada 20 minutos, busca os feeds, abre as materias principais atras de
+capa e linha fina, e grava tudo no Supabase. A pagina publica so le a tabela.
+
+Isso resolve tres problemas de uma vez: o limite de 10 segundos por Function,
+o bloqueio por excesso de requisicao nos portais, e a lentidao de abrir uma
+dezena de materias enquanto alguem espera a pagina carregar.
+
+Cada item guarda titulo, linha fina, sintese, veiculo, dominio real e miniatura.
+Quando a materia nao tem foto propria, a miniatura vira a marca do veiculo em
+vez de um bloco vazio.
+
+As vagas sao distribuidas por eixo editorial, senao a busca por cafe ocupa o
+feed inteiro: 6 cafe, 5 commodities, 4 geopolitica, 3 energia, 3 cambio e
+3 juros, completando ate 24 com o que sobrar por relevancia.
+
+Sem Supabase configurado, a funcao publica faz a coleta ao vivo com orcamento
+curto. Funciona, mas com menos capas resolvidas.
 
 ## Instalacao
 
@@ -103,8 +124,13 @@ Mantenha **DNS only** ate validar SSL, redirects e Functions. So depois ative o 
 
 ## Supabase
 
-Rode `supabase/migrations/0001_investbras_market.sql` no SQL Editor. A migracao cria
-as tabelas, os indices, os triggers de `updated_at` e liga **RLS em todas elas**.
+Rode as migracoes na ordem, no SQL Editor:
+
+1. `supabase/migrations/0001_investbras_market.sql` cria as tabelas, os indices,
+   os triggers de `updated_at` e liga **RLS em todas elas**.
+2. `supabase/migrations/0002_news_and_subscribers.sql` adiciona os campos que a
+   coleta de noticias precisa, os campos de cadastro manual de inscrito e a
+   funcao de limpeza `purge_old_news`.
 
 A unica policy permissiva libera leitura de `market_reports` com `status = 'published'`.
 Todo o resto so e acessivel pela service role, que vive apenas nas Functions.
@@ -127,11 +153,19 @@ esse e-mail. O login tenta o Supabase primeiro e cai para `ADMIN_EMAIL` como res
 ## Fluxo da mesa
 
 1. Entrar em `/admin`.
-2. **Gerar rascunho**: as Functions buscam cotacoes, noticias e agenda e montam o texto.
-   Com chave de IA, a leitura vem interpretada; sem chave, vem so com os numeros organizados.
+2. **Atualizar informacoes**: forca a releitura das tres fontes ignorando o cache
+   e monta o texto no editor. Com chave de IA a leitura vem interpretada; sem
+   chave, vem com os numeros organizados. A area publica ja se atualiza sozinha,
+   entao este botao serve para trazer tudo agora e comecar a edicao.
 3. Revisar e editar. O rascunho salva sozinho no navegador enquanto voce escreve.
 4. **Publicar edicao**: grava no Supabase e a pagina publica passa a exibir.
-5. **Enviar teste para mim** antes de **Disparar para a base**. O disparo real pede confirmacao.
+5. **Simular e-mail** abre em aba nova exatamente o HTML que o inscrito recebe,
+   gerado pelo mesmo modelo do disparo real.
+6. **Enviar teste para mim** antes de **Disparar para a base**. O disparo real
+   pede confirmacao.
+
+O bloco **Inscritos** cadastra endereco na mao, busca por e-mail, nome ou
+empresa, filtra por status e permite desativar, reativar ou remover.
 
 A regra do prompt de IA e explicita: interpretar apenas os dados recebidos, nunca criar
 cotacao, percentual, data ou evento, e declarar quando uma fonte nao respondeu. Ainda assim,
@@ -158,13 +192,18 @@ investbras-market-static/
   netlify/functions/
     _utils.js           json, fetch com timeout, rate limit, cliente Supabase
     _auth.js            assinatura e verificacao de sessao
+    _news.js            coleta, classificacao e cotas por eixo editorial
+    _email.js           modelo do e-mail, usado por disparo e simulador
     auth-login.js  auth-me.js
     market-data.js  market-news.js  market-agenda.js  news-image.js
+    cron-news.js        coleta agendada a cada 20 minutos
     generate-report.js  report.js  report-save.js
-    subscribe.js  unsubscribe.js  subscribers.js  send-campaign.js
+    subscribe.js  unsubscribe.js  subscribers.js
+    send-campaign.js  campaign-preview.js
     health.js
   supabase/migrations/
     0001_investbras_market.sql
+    0002_news_and_subscribers.sql
 ```
 
 ## Notas de operacao
@@ -177,6 +216,10 @@ investbras-market-static/
 - **Cafe robusta.** O Yahoo nao expoe robusta em simbolo publico estavel. Ao contratar
   uma fonte, informe `ROBUSTA_SYMBOL` e o contrato volta a aparecer na grade e na conversao.
   Preferimos omitir a linha a exibir "indisponivel" para sempre.
+- **Links do Google Noticias.** Eles nao redirecionam para a materia: a pagina e
+  do proprio Google. Por isso a coleta nao tenta buscar capa nesses itens, e usa
+  o `<source url>` do RSS para identificar o veiculo real e montar a miniatura
+  de marca. Os portais diretos entregam foto e texto proprios.
 - **Agenda.** O IBGE ja vem ligado. Para somar Copom, Fed ou USDA, adicione os links
   `.ics` em `AGENDA_ICS_URLS`, separados por virgula.
 - **Foto.** O visual da pagina e construido sobre os proprios dados. Se a Investbras

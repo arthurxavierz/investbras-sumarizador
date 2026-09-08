@@ -455,37 +455,79 @@ const proxiedImage = value => {
   }
 };
 
+/** Miniatura: foto da materia, marca do veiculo ou bloco neutro. */
+const newsThumb = (item, eager) => {
+  const image = proxiedImage(item.image);
+  if (!image) return '<span class="news-thumb is-blank" aria-hidden="true"></span>';
+
+  const brand = item.imageKind === 'marca';
+  return '<span class="news-thumb' + (brand ? ' is-brand' : '') + '">'
+    + '<img src="' + escapeHtml(image) + '" alt="" loading="' + (eager ? 'eager' : 'lazy')
+    + '" decoding="async">'
+    + '</span>';
+};
+
+const newsMeta = item => escapeHtml(item.source || 'Fonte publica')
+  + ' / ' + escapeHtml(formatDateTime(item.publishedAt));
+
+/** A sintese vem da linha fina quando existe, senao do resumo do feed. */
+const newsSummary = (item, limit) => {
+  const value = String(item.dek || item.excerpt || '').trim();
+  if (!value) return '';
+  return value.length > limit ? value.slice(0, limit).replace(/\s+\S*$/, '') + '...' : value;
+};
+
+const leadCard = (item, index) => '<a class="news-lead" href="' + escapeHtml(item.url)
+  + '" target="_blank" rel="noopener noreferrer">'
+  + newsThumb(item, index === 0)
+  + '<div class="news-lead-body">'
+  + '<span class="news-tag">' + escapeHtml(item.category || 'Mercado') + '</span>'
+  + '<h3>' + escapeHtml(item.title) + '</h3>'
+  + (newsSummary(item, 150) ? '<p>' + escapeHtml(newsSummary(item, 150)) + '</p>' : '')
+  + '<div class="news-meta">' + newsMeta(item) + '</div>'
+  + '</div></a>';
+
+const rowCard = item => '<a class="news-card" href="' + escapeHtml(item.url)
+  + '" target="_blank" rel="noopener noreferrer">'
+  + newsThumb(item, false)
+  + '<div>'
+  + '<span class="news-tag">' + escapeHtml(item.category || 'Mercado') + '</span>'
+  + '<h3>' + escapeHtml(item.title) + '</h3>'
+  + (newsSummary(item, 110) ? '<p>' + escapeHtml(newsSummary(item, 110)) + '</p>' : '')
+  + '<div class="news-meta">' + newsMeta(item) + '</div>'
+  + '</div></a>';
+
 const renderNews = items => {
+  const leads = $('#news-leads');
   const list = $('#news-list');
-  if (!list) return;
+  if (!list || !leads) return;
   list.setAttribute('aria-busy', 'false');
 
   if (!items || !items.length) {
+    leads.innerHTML = '';
     list.innerHTML = '<div class="empty-state"><strong>Feeds sem resposta</strong>'
-      + 'Nenhuma fonte publica respondeu nesta consulta. Configure NEWS_RSS_FEEDS para usar feeds proprios.</div>';
+      + 'Nenhuma fonte publica respondeu nesta consulta. A coleta agendada tenta de novo em ate 20 minutos.</div>';
     return;
   }
 
-  list.innerHTML = items.slice(0, 10).map((item, index) => {
-    const image = proxiedImage(item.image);
-    const thumb = image
-      ? '<span class="news-thumb"><img src="' + escapeHtml(image) + '" alt="" loading="'
-        + (index > 1 ? 'lazy' : 'eager') + '" decoding="async" width="108" height="74"></span>'
-      : '<span class="news-thumb" aria-hidden="true"></span>';
+  // As tres com foto propria abrem a secao; sem foto, a manchete perde forca.
+  const withPhoto = items.filter(item => item.imageKind === 'foto');
+  const featured = (withPhoto.length >= 3 ? withPhoto : items).slice(0, 3);
+  const featuredUrls = new Set(featured.map(item => item.url));
+  const rest = items.filter(item => !featuredUrls.has(item.url)).slice(0, 9);
 
-    return '<a class="news-card" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">'
-      + thumb
-      + '<div>'
-      + '<span class="news-tag">' + escapeHtml(item.category || 'Mercado') + '</span>'
-      + '<h3>' + escapeHtml(item.title) + '</h3>'
-      + '<p>' + escapeHtml(String(item.summary || '').slice(0, 130)) + '</p>'
-      + '<div class="news-meta">' + escapeHtml(item.source || 'Fonte publica') + ' / ' + escapeHtml(formatDateTime(item.publishedAt)) + '</div>'
-      + '</div></a>';
-  }).join('');
+  leads.innerHTML = featured.map(leadCard).join('');
+  list.innerHTML = rest.map(rowCard).join('');
 
-  list.querySelectorAll('.news-thumb img').forEach(image => {
-    image.addEventListener('error', () => image.remove(), { once: true });
-  });
+  for (const node of [leads, list]) {
+    node.querySelectorAll('.news-thumb img').forEach(image => {
+      image.addEventListener('error', () => {
+        const holder = image.closest('.news-thumb');
+        image.remove();
+        if (holder) holder.classList.add('is-blank');
+      }, { once: true });
+    });
+  }
 };
 
 const loadNews = async () => {
@@ -494,8 +536,9 @@ const loadNews = async () => {
     const payload = await response.json();
     renderNews(payload.data);
     const meta = payload.meta || {};
+    const categories = Object.keys(meta.byCategory || {}).length;
     setText('#news-meta', payload.success
-      ? (payload.data || []).length + ' materias / ' + (meta.coffeeItems || 0) + ' sobre cafe'
+      ? (payload.data || []).length + ' materias em ' + categories + ' frentes'
       : 'Feeds indisponiveis');
   } catch {
     renderNews([]);

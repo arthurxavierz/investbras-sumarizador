@@ -1,17 +1,7 @@
 'use strict';
 
-const crypto = require('crypto');
 const { hasSupabase, supabase, log } = require('./_utils');
-
-/**
- * Token derivado do e-mail. Permite o descadastro em um clique, sem login,
- * e sem aceitar remocao de qualquer endereco por quem adivinhar a URL.
- */
-const tokenFor = email => crypto
-  .createHmac('sha256', process.env.SESSION_SECRET || 'investbras-fallback-secret')
-  .update(String(email).trim().toLowerCase())
-  .digest('base64url')
-  .slice(0, 32);
+const { tokenFor } = require('./_email');
 
 const page = (title, message, tone) => `<!doctype html>
 <html lang="pt-BR">
@@ -80,4 +70,3 @@ exports.handler = async event => {
   }
 };
 
-exports.tokenFor = tokenFor;

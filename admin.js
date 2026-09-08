@@ -14,6 +14,7 @@ const API = {
   reportSave: '/.netlify/functions/report-save',
   report: '/.netlify/functions/report',
   subscribers: '/.netlify/functions/subscribers',
+  preview: '/.netlify/functions/campaign-preview',
   campaign: '/.netlify/functions/send-campaign'
 };
 
@@ -400,7 +401,10 @@ const generate = async () => {
   note.textContent = 'Buscando cotacoes, noticias e agenda...';
 
   try {
-    const response = await authFetch(API.generate, { method: 'POST' });
+    const response = await authFetch(API.generate, {
+      method: 'POST',
+      body: JSON.stringify({ refresh: true })
+    });
     const payload = await response.json();
 
     if (!response.ok) {
@@ -425,7 +429,9 @@ const generate = async () => {
       + (payload.data?.mode === 'deterministico' ? 'Modo tecnico.' : 'Interpretado por IA.')
 
     say('#editor-feedback', 'Rascunho carregado no editor. Revise antes de publicar.', 'ok');
-    toast('ok', 'Rascunho pronto',
+    loadCounters();
+    loadSubscribers();
+    toast('ok', 'Informacoes atualizadas',
       (inputs.availableAssets || 0) + ' cotacoes, ' + (inputs.newsItems || 0) + ' materias e '
       + (inputs.agendaItems || 0) + ' eventos. Revise antes de publicar.');
     $('#f-summary')?.focus();
@@ -437,7 +443,7 @@ const generate = async () => {
     }
   } finally {
     button.disabled = false;
-    button.textContent = 'Gerar rascunho do dia';
+    button.textContent = 'Atualizar informacoes';
   }
 };
 
@@ -477,7 +483,7 @@ const refreshEditionState = async () => {
   setText('#metric-status-detail', draft ? 'Salvo neste navegador' : 'Nada gerado ainda');
 };
 
-const loadCounters = async () => {
+const loadCounters = () => {
   fetch(API.data)
     .then(response => response.json())
     .then(payload => {
@@ -488,22 +494,10 @@ const loadCounters = async () => {
 
   fetch(API.news)
     .then(response => response.json())
-    .then(payload => setText('#metric-news', String((payload.data || []).length)))
+    .then(payload => {
+      setText('#metric-news', String((payload.data || []).length));
+    })
     .catch(() => setText('#metric-news', '0'));
-
-  try {
-    const response = await authFetch(API.subscribers);
-    const payload = await response.json();
-    const data = payload.data || {};
-    setText('#metric-subs', String(data.active || 0));
-    setText('#metric-subs-detail', payload.success
-      ? data.unsubscribed + ' descadastrados'
-      : 'Supabase nao configurado');
-    renderCampaigns(data.campaigns);
-  } catch {
-    setText('#metric-subs', '--');
-    setText('#metric-subs-detail', 'Base indisponivel');
-  }
 };
 
 const renderCampaigns = campaigns => {
@@ -558,7 +552,190 @@ const loadHealth = async () => {
   }
 };
 
+/* ------------------------------------------------------------- inscritos */
+
+const STATUS_LABEL = { active: 'Ativo', unsubscribed: 'Saiu', bounced: 'Retorno' };
+
+let subsQuery = { search: '', status: '' };
+
+const renderSubscribers = data => {
+  const host = $('#subs-list');
+  if (!host) return;
+
+  setText('#subs-summary', data.active + ' ativos / ' + data.unsubscribed
+    + ' saidas / ' + data.bounced + ' retornos');
+
+  const list = data.list || [];
+  if (!list.length) {
+    host.innerHTML = '<div class="empty-state">'
+      + (subsQuery.search || subsQuery.status
+        ? 'Nenhum inscrito corresponde ao filtro.'
+        : 'Base vazia. Cadastre o primeiro endereco acima ou aguarde inscricoes pela area publica.')
+      + '</div>';
+    return;
+  }
+
+  host.innerHTML = list.map(item => {
+    const status = item.status || 'active';
+    const toggle = status === 'active'
+      ? '<button class="mini-button" data-act="unsubscribed" data-email="' + escapeHtml(item.email) + '">Desativar</button>'
+      : '<button class="mini-button" data-act="active" data-email="' + escapeHtml(item.email) + '">Reativar</button>';
+
+    return '<div class="subs-row">'
+      + '<div><strong>' + escapeHtml(item.email) + '</strong>'
+      + '<small>' + escapeHtml(item.name || 'Sem nome') + ' / entrou em '
+      + escapeHtml(formatDateTime(item.created_at)) + '</small></div>'
+      + '<span class="org">' + escapeHtml(item.organization || '') + '</span>'
+      + '<span class="subs-state" data-state="' + escapeHtml(status) + '">'
+      + escapeHtml(STATUS_LABEL[status] || status) + '</span>'
+      + '<span class="subs-actions">' + toggle
+      + '<button class="mini-button danger" data-act="remove" data-email="' + escapeHtml(item.email) + '">Remover</button>'
+      + '</span></div>';
+  }).join('');
+};
+
+const loadSubscribers = async () => {
+  const params = new URLSearchParams();
+  if (subsQuery.search) params.set('search', subsQuery.search);
+  if (subsQuery.status) params.set('status', subsQuery.status);
+
+  try {
+    const response = await authFetch(API.subscribers + (params.toString() ? '?' + params : ''));
+    const payload = await response.json();
+    const data = payload.data || {};
+
+    setText('#metric-subs', String(data.active || 0));
+    setText('#metric-subs-detail', payload.success
+      ? (data.unsubscribed || 0) + ' descadastrados'
+      : 'Supabase nao configurado');
+
+    if (!payload.success) {
+      $('#subs-list').innerHTML = '<div class="empty-state"><strong>Base indisponivel</strong>'
+        + escapeHtml(payload.error || 'Configure o Supabase para gerenciar inscritos.') + '</div>';
+      setText('#subs-summary', 'Supabase nao configurado');
+      return;
+    }
+
+    renderSubscribers(data);
+    renderCampaigns(data.campaigns);
+  } catch (error) {
+    if (error.message !== 'Sessao expirada') {
+      setText('#subs-summary', 'Base indisponivel');
+      setText('#metric-subs', '--');
+    }
+  }
+};
+
+const subscriberAction = async (body, successTitle) => {
+  try {
+    const response = await authFetch(API.subscribers, { method: 'POST', body: JSON.stringify(body) });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      say('#subs-feedback', payload.error || 'Acao recusada.', 'error');
+      toast('error', 'Acao recusada', payload.error || '');
+      return false;
+    }
+
+    say('#subs-feedback', payload.message || 'Feito.', 'ok');
+    toast('ok', successTitle, payload.message || '');
+    loadSubscribers();
+    return true;
+  } catch (error) {
+    if (error.message !== 'Sessao expirada') {
+      say('#subs-feedback', 'Falha de conexao.', 'error');
+      toast('error', 'Falha de conexao', 'A base nao respondeu.');
+    }
+    return false;
+  }
+};
+
+const setupSubscribers = () => {
+  $('#subs-add-form')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = $('#subs-add');
+    const email = $('#subs-email').value.trim();
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      say('#subs-feedback', 'Informe um e-mail valido.', 'error');
+      $('#subs-email').focus();
+      return;
+    }
+
+    button.disabled = true;
+    const ok = await subscriberAction({
+      action: 'add',
+      email,
+      name: $('#subs-name').value.trim(),
+      organization: $('#subs-org').value.trim()
+    }, 'Inscrito cadastrado');
+    button.disabled = false;
+    if (ok) $('#subs-add-form').reset();
+  });
+
+  // Delegacao: a lista e reconstruida a cada acao.
+  $('#subs-list')?.addEventListener('click', event => {
+    const button = event.target.closest('button[data-act]');
+    if (!button) return;
+
+    const email = button.dataset.email;
+    const act = button.dataset.act;
+
+    if (act === 'remove') {
+      const warning = 'Remover ' + email + ' da base?\n\nA acao nao pode ser desfeita.';
+      if (!window.confirm(warning)) return;
+      subscriberAction({ action: 'remove', email }, 'Inscrito removido');
+      return;
+    }
+
+    subscriberAction({ action: 'status', email, status: act },
+      act === 'active' ? 'Inscrito reativado' : 'Inscrito desativado');
+  });
+
+  let searchTimer;
+  $('#subs-search')?.addEventListener('input', event => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      subsQuery.search = event.target.value.trim();
+      loadSubscribers();
+    }, 350);
+  });
+
+  $('#subs-status')?.addEventListener('change', event => {
+    subsQuery.status = event.target.value;
+    loadSubscribers();
+  });
+};
+
 /* --------------------------------------------------------------- e-mail */
+
+/**
+ * Abre a previa em aba nova por submit de formulario. Nao da para usar fetch
+ * aqui: o resultado precisa ser um documento de topo, com a propria CSP, para
+ * que os estilos embutidos do e-mail rendereizem como no cliente de e-mail.
+ */
+const previewEmail = () => {
+  const data = formData();
+  if (!String(data.title || '').trim() || !String(data.summary || '').trim()) {
+    say('#email-feedback', 'A edicao precisa de titulo e resumo para a previa.', 'error');
+    toast('error', 'Previa indisponivel', 'Preencha titulo e resumo antes.');
+    return;
+  }
+
+  const sections = {};
+  for (const key of SECTIONS) sections[key] = data[key] || '';
+
+  $('#preview-payload').value = JSON.stringify({
+    token: token(),
+    title: data.title,
+    summary: data.summary,
+    sections,
+    email: session ? session.email : ''
+  });
+
+  $('#preview-form').submit();
+  toast('info', 'Previa aberta', 'O e-mail abriu em uma aba nova, exatamente como o inscrito recebe.');
+};
 
 const sendEmail = async isTest => {
   const data = formData();
@@ -606,7 +783,7 @@ const sendEmail = async isTest => {
     toast(response.ok ? 'ok' : 'error',
       response.ok ? (isTest ? 'Teste enviado' : 'Disparo concluido') : 'Disparo nao concluido',
       payload.message || payload.error || '');
-    if (response.ok) loadCounters();
+    if (response.ok) loadSubscribers();
   } catch (error) {
     if (error.message !== 'Sessao expirada') say('#email-feedback', 'Falha de conexao no disparo.', 'error');
   } finally {
@@ -631,10 +808,13 @@ const bootConsole = () => {
   if (bootDone) {
     loadHealth();
     loadCounters();
+    loadSubscribers();
     refreshEditionState();
     return;
   }
   bootDone = true;
+
+  setupSubscribers();
 
   $('#generate')?.addEventListener('click', generate);
   $('#save-draft')?.addEventListener('click', () => persist('draft'));
@@ -642,6 +822,7 @@ const bootConsole = () => {
   $('#unpublish')?.addEventListener('click', () => persist('unpublish'));
   $('#copy-report')?.addEventListener('click', copyReport);
   $('#health-refresh')?.addEventListener('click', loadHealth);
+  $('#preview-email')?.addEventListener('click', previewEmail);
   $('#send-test')?.addEventListener('click', () => sendEmail(true));
   $('#send-campaign')?.addEventListener('click', () => sendEmail(false));
   $('#logout')?.addEventListener('click', () => endSession('Sessao encerrada.'));
@@ -656,6 +837,7 @@ const bootConsole = () => {
 
   loadHealth();
   loadCounters();
+  loadSubscribers();
   refreshEditionState();
 };
 

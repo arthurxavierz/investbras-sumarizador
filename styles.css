@@ -714,6 +714,68 @@ p { margin: 0; }
 
 /* Noticias e agenda ------------------------------------------------------- */
 
+/* Tres destaques abrem a secao. O resto vira lista compacta. */
+.news-leads {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: clamp(28px, 3vw, 40px);
+}
+
+.news-lead {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg-panel);
+  overflow: hidden;
+  transition: border-color .2s var(--ease), transform .2s var(--ease);
+}
+
+.news-lead:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
+.news-lead:hover h3 { color: var(--gold-bright); }
+
+.news-lead .news-thumb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.news-lead-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 16px 16px 18px;
+  flex: 1;
+}
+
+.news-lead h3 { font-size: 16.5px; line-height: 1.32; transition: color .2s var(--ease); }
+.news-lead p { font-size: 13px; color: var(--txt-muted); line-height: 1.55; }
+.news-lead .news-meta { margin-top: auto; padding-top: 8px; }
+
+/* Sem foto propria, a miniatura mostra a marca do veiculo, nunca esticada. */
+.news-thumb.is-brand {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(70% 70% at 50% 50%, rgba(216, 175, 88, .07), transparent 70%),
+    var(--bg-raised);
+}
+
+.news-thumb.is-brand img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  opacity: .85;
+}
+
+.news-lead .news-thumb.is-brand img { width: 44px; height: 44px; }
+.news-thumb.is-blank { background: var(--bg-raised); }
+.news-thumb.is-blank img { display: none; }
+
 .news-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
@@ -920,6 +982,9 @@ p { margin: 0; }
 /* Responsivo -------------------------------------------------------------- */
 
 @media (max-width: 1080px) {
+  .news-leads { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .news-leads > :last-child { grid-column: 1 / -1; }
+
   .hero-grid,
   .coffee-layout,
   .news-layout,
@@ -942,6 +1007,8 @@ p { margin: 0; }
 
 @media (max-width: 620px) {
   html { scroll-padding-top: 80px; }
+  .news-leads { grid-template-columns: minmax(0, 1fr); }
+  .news-leads > :last-child { grid-column: auto; }
   .section { padding-block: 44px; }
   .news-card { grid-template-columns: 84px minmax(0, 1fr); gap: 14px; }
   .news-thumb { width: 84px; height: 62px; }
