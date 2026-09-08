@@ -14,9 +14,15 @@
  *
  * Fica separado de market-data de proposito: se o CEPEA cair, as cotacoes de
  * bolsa continuam chegando, e vice-versa.
+ *
+ * Sobre o CEPEA: o site responde 403 a requisicao vinda do datacenter onde as
+ * Functions rodam, mesmo com cabecalhos de navegador. Do Brasil o widget abre
+ * normalmente. Por isso existem dois caminhos: a tentativa automatica, que
+ * funciona quando o bloqueio nao se aplica, e o valor informado pela mesa e
+ * guardado no banco. Cada indicador declara de onde veio.
  */
 
-const { json, preflight, timeoutFetch, retryFetch } = require('./_utils');
+const { json, preflight, timeoutFetch, retryFetch, hasSupabase, supabase } = require('./_utils');
 
 const CACHE_MS = 30 * 60 * 1000;
 let cache = { at: 0, payload: null };
@@ -172,13 +178,86 @@ const fetchWeather = async () => {
   });
 };
 
+/* -------------------------------------------- ultimo valor conhecido */
+
+const storedIndicators = async () => {
+  if (!hasSupabase()) return new Map();
+  try {
+    const rows = await supabase('physical_indicators', {
+      query: { select: 'key,name,value,unit,reference_date,source,origin,updated_at' }
+    });
+    return new Map((rows || []).map(row => [row.key, row]));
+  } catch {
+    return new Map();
+  }
+};
+
+/** Guarda o que a coleta automatica conseguiu, para servir de reserva depois. */
+const persistIndicator = async item => {
+  if (!hasSupabase() || item.status !== 'available' || !item.referenceDate) return;
+  try {
+    await supabase('physical_indicators', {
+      method: 'POST',
+      body: {
+        key: item.key,
+        name: item.name,
+        value: item.value,
+        unit: item.unit,
+        reference_date: item.referenceDate,
+        source: item.source,
+        origin: 'automatica',
+        updated_at: new Date().toISOString()
+      },
+      prefer: 'resolution=merge-duplicates,return=minimal'
+    });
+  } catch {
+    /* gravar a reserva nunca pode derrubar a leitura */
+  }
+};
+
+/** Idade do dado em dias, para a interface dizer se ja envelheceu. */
+const ageInDays = referenceDate => {
+  if (!referenceDate) return null;
+  const reference = new Date(referenceDate + 'T12:00:00-03:00');
+  if (Number.isNaN(reference.getTime())) return null;
+  return Math.max(0, Math.floor((Date.now() - reference.getTime()) / 86400000));
+};
+
 /* ------------------------------------------------------------ payload */
 
 const buildPayload = async () => {
-  const [indicatorResults, weatherResult] = await Promise.all([
+  const [liveResults, weatherResult, stored] = await Promise.all([
     Promise.all(INDICATORS.map(fetchIndicator)),
-    fetchWeather().catch(() => null)
+    fetchWeather().catch(() => null),
+    storedIndicators()
   ]);
+
+  await Promise.all(liveResults.map(persistIndicator));
+
+  // Quando a coleta automatica falha, entra o ultimo valor conhecido, sempre
+  // rotulado com a data de referencia e a origem.
+  const indicatorResults = liveResults.map(item => {
+    if (item.status === 'available') {
+      return Object.assign({}, item, { origin: 'automatica', ageDays: ageInDays(item.referenceDate) });
+    }
+
+    const fallback = stored.get(item.key);
+    if (!fallback) return Object.assign({}, item, { origin: null, ageDays: null });
+
+    return {
+      key: item.key,
+      name: fallback.name || item.name,
+      value: Number(fallback.value),
+      unit: fallback.unit || item.unit,
+      highlight: item.highlight,
+      referenceDate: fallback.reference_date,
+      source: fallback.source || 'CEPEA/ESALQ',
+      origin: fallback.origin || 'manual',
+      ageDays: ageInDays(fallback.reference_date),
+      status: 'available',
+      fromCache: true
+    };
+  });
 
   const available = indicatorResults.filter(item => item.status === 'available');
   const arabica = indicatorResults.find(item => item.key === 'arabica');
@@ -196,7 +275,9 @@ const buildPayload = async () => {
       weather: weatherResult || [],
       weatherAvailable: Boolean(weatherResult),
       activeIndicators: available.length,
-      totalIndicators: indicatorResults.length
+      totalIndicators: indicatorResults.length,
+      liveIndicators: liveResults.filter(item => item.status === 'available').length,
+      canCollectDirectly: liveResults.some(item => item.status === 'available')
     }
   };
 };
@@ -211,8 +292,11 @@ exports.handler = async event => {
 
   try {
     const payload = await buildPayload();
-    if (payload.success) cache = { at: now, payload };
-    return json(payload.success ? 200 : 503, payload, payload.success ? 900 : 0);
+    // Cache curto quando nenhum indicador veio: nao vale segurar meia hora um
+    // resultado incompleto so porque o clima respondeu.
+    const complete = payload.data.activeIndicators === payload.data.totalIndicators;
+    if (payload.success) cache = { at: complete ? now : now - (CACHE_MS - 5 * 60 * 1000), payload };
+    return json(payload.success ? 200 : 503, payload, payload.success ? (complete ? 900 : 300) : 0);
   } catch (error) {
     console.error('market-physical', error);
     if (cache.payload) return json(200, Object.assign({}, cache.payload, { stale: true }), 120);

@@ -366,10 +366,19 @@ const renderSpread = (equivalents, physical) => {
   setText('#spread-physical', isNumber(physicalValue)
     ? formatBrl(physicalValue)
     : (pending ? 'Consultando' : 'Indisponivel'));
+  // A origem e a idade do indicador ficam visiveis: leitura de tres dias atras
+  // nao pode passar por cotacao do dia.
+  const referenceLabel = isNumber(physicalValue) && physical.referenceDate
+    ? physical.referenceDate.split('-').reverse().join('/')
+    : null;
+  const age = isNumber(physicalValue) && Number.isFinite(Number(physical.ageDays))
+    ? Number(physical.ageDays)
+    : null;
+
   setText('#spread-physical-note', isNumber(physicalValue)
-    ? 'CEPEA/ESALQ, referencia de ' + (physical.referenceDate
-      ? physical.referenceDate.split('-').reverse().join('/')
-      : 'data nao informada')
+    ? (physical.source || 'CEPEA/ESALQ')
+      + (referenceLabel ? ', referencia de ' + referenceLabel : '')
+      + (age !== null && age > 1 ? ' (' + age + ' dias)' : '')
     : (pending ? 'Buscando o indicador CEPEA' : 'Indicador CEPEA nao respondeu'));
 
   const node = $('#spread-difference');

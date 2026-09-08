@@ -45,6 +45,8 @@ const REQUIRED = [
   'netlify/functions/_news.js',
   'netlify/functions/_email.js',
   'netlify/functions/market-physical.js',
+  'netlify/functions/physical-save.js',
+  'supabase/migrations/0003_physical_indicators.sql',
   'supabase/migrations/0002_news_and_subscribers.sql'
 ];
 

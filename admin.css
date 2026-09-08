@@ -406,6 +406,64 @@ body[data-view="console"] #booting { display: none !important; }
 .preview h3 { font-size: 18px; }
 .preview p { font-size: 13px; color: var(--txt-muted); line-height: 1.6; }
 
+/* Mercado fisico ----------------------------------------------------------- */
+
+.panel-note {
+  font-size: 13px;
+  color: var(--txt-muted);
+  line-height: 1.6;
+  max-width: 76ch;
+  margin-bottom: 18px;
+}
+
+.physical-list { display: grid; margin-bottom: 18px; }
+
+.physical-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 14px;
+  align-items: baseline;
+  padding-block: 11px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.physical-row strong { font-family: var(--mono); font-size: 15px; font-weight: 500; }
+.physical-row span { font-size: 13px; color: var(--txt-muted); }
+.physical-row small { font-family: var(--mono); font-size: 11px; color: var(--txt-dim); white-space: nowrap; }
+
+.origin-tag {
+  padding: 3px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  font-size: 10.5px;
+  color: var(--txt-dim);
+  white-space: nowrap;
+}
+
+.origin-tag[data-origin="automatica"] { border-color: var(--up); color: var(--up); }
+.origin-tag[data-origin="manual"] { border-color: var(--gold-dim); color: var(--gold); }
+.origin-tag[data-age="velho"] { border-color: var(--down); color: var(--down); }
+
+.physical-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.field input[type="date"] {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: var(--bg-inset);
+  color: var(--txt);
+  font-size: 13.5px;
+  color-scheme: dark;
+}
+
 /* Card do dia -------------------------------------------------------------- */
 
 .card-tools {
@@ -544,6 +602,8 @@ body[data-view="console"] #booting { display: none !important; }
 /* Responsivo -------------------------------------------------------------- */
 
 @media (max-width: 1080px) {
+  .physical-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .physical-form .button { grid-column: 1 / -1; }
   .subs-add { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .subs-add .button { grid-column: 1 / -1; }
   .subs-row { grid-template-columns: minmax(0, 1fr) 96px auto; }
@@ -577,7 +637,9 @@ body[data-view="console"] #booting { display: none !important; }
   .email-grid { grid-template-columns: minmax(0, 1fr); }
   .subs-add,
   .subs-filters,
+  .physical-form,
   .card-tools { grid-template-columns: minmax(0, 1fr); }
+  .physical-row { grid-template-columns: minmax(0, 1fr) auto; }
   .subs-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .subs-actions { justify-content: flex-start; }
   .history-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }

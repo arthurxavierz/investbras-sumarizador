@@ -10,6 +10,7 @@ const API = {
   health: '/.netlify/functions/health',
   data: '/.netlify/functions/market-data',
   physical: '/.netlify/functions/market-physical',
+  physicalSave: '/.netlify/functions/physical-save',
   news: '/.netlify/functions/market-news',
   generate: '/.netlify/functions/generate-report',
   reportSave: '/.netlify/functions/report-save',
@@ -452,6 +453,7 @@ const generate = async () => {
     say('#editor-feedback', 'Rascunho carregado no editor. Revise antes de publicar.', 'ok');
     loadCounters();
     loadSubscribers();
+    loadPhysical();
     toast('ok', 'Informacoes atualizadas',
       (inputs.availableAssets || 0) + ' cotacoes, ' + (inputs.newsItems || 0) + ' materias e '
       + (inputs.agendaItems || 0) + ' eventos. Revise antes de publicar.');
@@ -571,6 +573,102 @@ const loadHealth = async () => {
   } finally {
     if (button) { button.disabled = false; button.textContent = 'Verificar'; }
   }
+};
+
+/* --------------------------------------------------------- mercado fisico */
+
+const PHYSICAL_LABEL = { arabica: 'Cafe arabica', robusta: 'Cafe robusta', sugar: 'Acucar cristal SP', cattle: 'Boi gordo' };
+
+const brl = value => (Number.isFinite(Number(value))
+  ? Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  : 'Indisponivel');
+
+const renderPhysical = data => {
+  const host = $('#physical-list');
+  if (!host) return;
+
+  const indicators = data.indicators || [];
+  setText('#physical-origin', data.canCollectDirectly
+    ? 'Coleta automatica funcionando'
+    : 'Coleta automatica bloqueada, use o registro manual');
+
+  if (!indicators.length) {
+    host.innerHTML = '<div class="empty-state">Nenhum indicador conhecido ainda.</div>';
+    return;
+  }
+
+  host.innerHTML = indicators.map(item => {
+    const has = item.status === 'available';
+    // Indicador do CEPEA envelhece rapido: acima de tres dias vira alerta.
+    const stale = has && Number(item.ageDays) > 3;
+    const origin = item.origin || 'sem origem';
+
+    return '<div class="physical-row">'
+      + '<span>' + escapeHtml(PHYSICAL_LABEL[item.key] || item.name) + '</span>'
+      + '<strong>' + escapeHtml(has ? brl(item.value) : 'Indisponivel') + '</strong>'
+      + '<span class="origin-tag" data-origin="' + escapeHtml(origin) + '"'
+      + (stale ? ' data-age="velho"' : '') + '>'
+      + escapeHtml(has
+        ? origin + (item.referenceDate ? ' / ' + item.referenceDate.split('-').reverse().join('/') : '')
+          + (stale ? ' / ' + item.ageDays + ' dias' : '')
+        : 'sem valor')
+      + '</span>'
+      + '</div>';
+  }).join('');
+};
+
+const loadPhysical = async () => {
+  try {
+    const response = await fetch(API.physical);
+    const payload = await response.json();
+    renderPhysical(payload.data || {});
+  } catch {
+    setText('#physical-origin', 'Nao foi possivel consultar');
+  }
+};
+
+const setupPhysical = () => {
+  const dateInput = $('#physical-date');
+  if (dateInput) dateInput.value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+
+  $('#physical-form')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = $('#physical-save');
+    const key = $('#physical-key').value;
+    const value = $('#physical-value').value.trim();
+
+    if (!value) {
+      say('#physical-feedback', 'Informe o valor do indicador.', 'error');
+      $('#physical-value').focus();
+      return;
+    }
+
+    button.disabled = true;
+    try {
+      const response = await authFetch(API.physicalSave, {
+        method: 'POST',
+        body: JSON.stringify({ key, value, referenceDate: $('#physical-date').value })
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        say('#physical-feedback', payload.error || 'Nao foi possivel registrar.', 'error');
+        toast('error', 'Indicador nao registrado', payload.error || '');
+        return;
+      }
+
+      say('#physical-feedback', payload.message || 'Registrado.', 'ok');
+      toast('ok', 'Indicador registrado', payload.message || '');
+      $('#physical-value').value = '';
+      loadPhysical();
+    } catch (error) {
+      if (error.message !== 'Sessao expirada') {
+        say('#physical-feedback', 'Falha de conexao.', 'error');
+      }
+    } finally {
+      button.disabled = false;
+    }
+  });
 };
 
 /* ------------------------------------------------------------ card do dia */
@@ -899,12 +997,14 @@ const bootConsole = () => {
     loadHealth();
     loadCounters();
     loadSubscribers();
+    loadPhysical();
     refreshEditionState();
     return;
   }
   bootDone = true;
 
   setupSubscribers();
+  setupPhysical();
 
   $('#generate')?.addEventListener('click', generate);
   $('#save-draft')?.addEventListener('click', () => persist('draft'));
@@ -935,6 +1035,7 @@ const bootConsole = () => {
   loadHealth();
   loadCounters();
   loadSubscribers();
+  loadPhysical();
   refreshEditionState();
 };
 

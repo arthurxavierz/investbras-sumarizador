@@ -61,6 +61,7 @@
       <nav aria-label="Secoes do painel">
         <a href="#pipeline">Producao</a>
         <a href="#editor">Editor</a>
+        <a href="#fisico">Mercado fisico</a>
         <a href="#card">Card</a>
         <a href="#inscritos">Inscritos</a>
         <a href="#distribuicao">Distribuicao</a>
@@ -195,6 +196,46 @@
           </section>
         </aside>
       </div>
+
+      <section class="panel" id="fisico">
+        <header class="panel-head">
+          <h2>Mercado fisico</h2>
+          <span class="section-meta" id="physical-origin">Verificando coleta</span>
+        </header>
+
+        <p class="panel-note" id="physical-note">
+          O site do CEPEA recusa requisicao vinda do servidor onde as Functions rodam, entao a
+          coleta automatica pode falhar mesmo com o widget abrindo normalmente no seu navegador.
+          Informe o indicador aqui e ele passa a valer na pagina publica, no rascunho, no card e
+          no e-mail, sempre com a data de referencia declarada.
+        </p>
+
+        <div class="physical-list" id="physical-list"></div>
+
+        <form class="physical-form" id="physical-form">
+          <div class="field">
+            <label for="physical-key">Indicador</label>
+            <select id="physical-key">
+              <option value="arabica">Cafe arabica (saca 60 kg)</option>
+              <option value="robusta">Cafe robusta (saca 60 kg)</option>
+              <option value="sugar">Acucar cristal SP (saca 50 kg)</option>
+              <option value="cattle">Boi gordo (arroba)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="physical-value">Valor em reais</label>
+            <input id="physical-value" type="text" inputmode="decimal" placeholder="1659,93" required>
+          </div>
+          <div class="field">
+            <label for="physical-date">Data de referencia</label>
+            <input id="physical-date" type="date">
+          </div>
+          <button class="button button-accent" type="submit" id="physical-save">Registrar</button>
+        </form>
+
+        <small class="form-feedback" id="physical-feedback" role="status"></small>
+        <a class="ghost-button small" href="https://www.cepea.org.br/br/indicador/cafe.aspx" target="_blank" rel="noopener">Abrir o indicador no CEPEA</a>
+      </section>
 
       <section class="panel" id="card">
         <header class="panel-head">
