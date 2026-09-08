@@ -18,8 +18,8 @@ Basta subir o site. Estes blocos usam fontes publicas e nao dependem de chave:
 | Acucar, petroleo WTI, ouro, soja, milho | ICE, NYMEX, COMEX e CBOT via Yahoo Finance |
 | Dolar PTAX | Banco Central do Brasil (Olinda) |
 | Selic meta e IPCA do mes | Banco Central do Brasil (SGS) |
-| Cafe arabica e robusta no fisico | Indicadores CEPEA/ESALQ |
-| Acucar cristal SP e boi gordo | Indicadores CEPEA/ESALQ |
+| Cafe arabica e robusta no fisico | Indicadores CEPEA/ESALQ, ver a nota abaixo |
+| Acucar cristal SP e boi gordo | Indicadores CEPEA/ESALQ, ver a nota abaixo |
 | Clima nas pracas produtoras | Open-Meteo, sem chave |
 | Agenda economica | Calendario oficial de divulgacoes do IBGE |
 | Noticias | Canal Rural, InfoMoney, Money Times, Agrolink, G1 agro, G1 mundo, Agencia Brasil e quatro buscas tematicas |
@@ -40,6 +40,24 @@ O CEPEA entra como o outro lado da conta: quanto a saca vale de fato no Brasil.
 
 A diferenca entre os dois numeros e o que a mesa negocia, e ela so aparece quando
 as duas leituras chegam na mesma consulta.
+
+### O caso do CEPEA
+
+O CEPEA responde **403 a requisicao vinda do datacenter** onde as Functions
+rodam. Nao e o User-Agent: de um IP brasileiro tanto o UA da aplicacao quanto o
+de navegador retornam 200; de us-east-1 os quatro indicadores caem. E bloqueio
+por IP, e cabecalho nenhum contorna.
+
+Como a mesa consulta o indicador diariamente de qualquer forma, o caminho e
+duplo:
+
+1. A coleta automatica continua tentando. Quando funciona, o valor e gravado.
+2. O painel tem um formulario em **Mercado fisico** para registrar o numero na
+   mao, com data de referencia.
+
+A leitura sempre declara de onde veio e quanto tempo tem. Acima de um dia a
+pagina publica avisa a idade; acima de tres, o painel marca em vermelho. Um
+indicador de terca nao pode passar por cotacao de hoje.
 
 ### Clima nas pracas produtoras
 
@@ -159,6 +177,8 @@ Rode as migracoes na ordem, no SQL Editor:
 2. `supabase/migrations/0002_news_and_subscribers.sql` adiciona os campos que a
    coleta de noticias precisa, os campos de cadastro manual de inscrito e a
    funcao de limpeza `purge_old_news`.
+3. `supabase/migrations/0003_physical_indicators.sql` cria a tabela do mercado
+   fisico, onde fica o ultimo valor conhecido de cada indicador.
 
 A unica policy permissiva libera leitura de `market_reports` com `status = 'published'`.
 Todo o resto so e acessivel pela service role, que vive apenas nas Functions.
@@ -191,6 +211,11 @@ esse e-mail. O login tenta o Supabase primeiro e cai para `ADMIN_EMAIL` como res
    gerado pelo mesmo modelo do disparo real.
 6. **Enviar teste para mim** antes de **Disparar para a base**. O disparo real
    pede confirmacao.
+
+O bloco **Mercado fisico** mostra os quatro indicadores com a origem de cada um
+e recebe o registro manual quando a coleta automatica nao passa.
+
+O bloco **Card do dia** gera o JPG consolidado em post ou story.
 
 O bloco **Inscritos** cadastra endereco na mao, busca por e-mail, nome ou
 empresa, filtra por status e permite desativar, reativar ou remover.
@@ -226,6 +251,7 @@ investbras-market-static/
     auth-login.js  auth-me.js
     market-data.js  market-news.js  market-agenda.js  news-image.js
     market-physical.js  indicadores CEPEA e clima das pracas produtoras
+    physical-save.js    registro manual do indicador fisico pela mesa
     cron-news.js        coleta agendada a cada 20 minutos
     generate-report.js  report.js  report-save.js
     subscribe.js  unsubscribe.js  subscribers.js
@@ -234,6 +260,7 @@ investbras-market-static/
   supabase/migrations/
     0001_investbras_market.sql
     0002_news_and_subscribers.sql
+    0003_physical_indicators.sql
 ```
 
 ## Notas de operacao
@@ -250,9 +277,9 @@ investbras-market-static/
   do proprio Google. Por isso a coleta nao tenta buscar capa nesses itens, e usa
   o `<source url>` do RSS para identificar o veiculo real e montar a miniatura
   de marca. Os portais diretos entregam foto e texto proprios.
-- **CEPEA.** Os indicadores vem do widget publico do site. O arabica e o numero
-  central do produto, entao ele tenta tres vezes antes de desistir, contra duas
-  dos demais. O CEPEA publica uma vez por dia, entao o cache e de 30 minutos.
+- **CEPEA.** Ver a secao "O caso do CEPEA" acima. O widget e publico, mas o
+  bloqueio por IP faz a coleta automatica falhar em producao. O registro manual
+  no painel e o caminho confiavel, e leva menos de dez segundos por dia.
 - **PTAX em feriado.** O Banco Central so publica em dia util. A busca anda para
   tras dia a dia, e agora tem prazo proprio de 7 segundos: sem esse teto um
   feriado prolongado podia somar 48 segundos e estourar o limite da Function.
