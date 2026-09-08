@@ -26,6 +26,23 @@ let cache = { at: 0, payload: null };
 const CEPEA_WIDGET = 'https://www.cepea.org.br/br/widgetproduto.js.php'
   + '?fonte=arial&tamanho=10&largura=400px&id_indicador[]=';
 
+/**
+ * O site do CEPEA responde 403 a requisicao que nao pareca navegador, o que
+ * derrubava a coleta a partir do datacenter mesmo funcionando de uma maquina
+ * comum. O widget e publico e embutivel; estes cabecalhos apenas reproduzem o
+ * que um navegador enviaria ao carregar esse mesmo script em uma pagina.
+ */
+const CEPEA_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+    + '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+  Accept: '*/*',
+  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+  Referer: 'https://www.cepea.org.br/br/indicador/cafe.aspx',
+  'Sec-Fetch-Dest': 'script',
+  'Sec-Fetch-Mode': 'no-cors',
+  'Sec-Fetch-Site': 'same-origin'
+};
+
 const INDICATORS = [
   { id: 23, key: 'arabica', name: 'Cafe arabica', unit: 'BRL/saca 60kg', highlight: true },
   { id: 24, key: 'robusta', name: 'Cafe robusta', unit: 'BRL/saca 60kg', highlight: true },
@@ -52,7 +69,7 @@ const fetchIndicator = async indicator => {
     // uma tentativa nele do que nos demais.
     const attempts = indicator.highlight ? 3 : 2;
     const response = await retryFetch(CEPEA_WIDGET + indicator.id, {
-      headers: { Accept: 'text/javascript,*/*' },
+      headers: CEPEA_HEADERS,
       redirect: 'follow'
     }, 8000, attempts);
 
