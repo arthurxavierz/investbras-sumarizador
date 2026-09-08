@@ -38,7 +38,13 @@ const REQUIRED = [
   'netlify/functions/subscribe.js',
   'netlify/functions/unsubscribe.js',
   'netlify/functions/subscribers.js',
-  'netlify/functions/send-campaign.js'
+  'netlify/functions/send-campaign.js',
+  'netlify/functions/campaign-preview.js',
+  'netlify/functions/collect-news.js',
+  'netlify/functions/cron-news.js',
+  'netlify/functions/_news.js',
+  'netlify/functions/_email.js',
+  'supabase/migrations/0002_news_and_subscribers.sql'
 ];
 
 for (const file of REQUIRED) {

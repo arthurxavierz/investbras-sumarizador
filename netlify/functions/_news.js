@@ -386,4 +386,43 @@ const collect = async (options = {}) => {
   };
 };
 
-module.exports = { collect, TOPICS, DEFAULT_FEEDS };
+const { hasSupabase, supabase } = require('./_utils');
+
+const toRow = item => ({
+  title: item.title,
+  summary: item.excerpt || null,
+  dek: item.dek || null,
+  category: item.category,
+  source: item.source,
+  source_domain: item.sourceDomain || null,
+  url: item.url,
+  image_url: item.image || null,
+  image_kind: item.imageKind || null,
+  relevance: item.relevance,
+  published_at: item.publishedAt,
+  fetched_at: new Date().toISOString()
+});
+
+/**
+ * Grava a coleta. url tem restricao unica, entao a mesma materia atualiza a
+ * propria linha em vez de duplicar.
+ */
+const store = async items => {
+  if (!items.length || !hasSupabase()) return 0;
+
+  await supabase('news_items', {
+    method: 'POST',
+    body: items.map(toRow),
+    prefer: 'resolution=merge-duplicates,return=minimal'
+  });
+
+  try {
+    await supabase('rpc/purge_old_news', { method: 'POST', body: { days: 14 } });
+  } catch {
+    /* limpeza nao pode derrubar a coleta */
+  }
+
+  return items.length;
+};
+
+module.exports = { collect, store, TOPICS, DEFAULT_FEEDS };

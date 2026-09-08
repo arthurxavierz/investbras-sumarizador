@@ -15,6 +15,7 @@ const API = {
   report: '/.netlify/functions/report',
   subscribers: '/.netlify/functions/subscribers',
   preview: '/.netlify/functions/campaign-preview',
+  collectNews: '/.netlify/functions/collect-news',
   campaign: '/.netlify/functions/send-campaign'
 };
 
@@ -401,6 +402,22 @@ const generate = async () => {
   note.textContent = 'Buscando cotacoes, noticias e agenda...';
 
   try {
+    // Primeiro a coleta de noticias, que grava no banco e alimenta a area
+    // publica. Ela pode falhar sem invalidar o resto do fluxo.
+    let collected = null;
+    try {
+      const collectResponse = await authFetch(API.collectNews, { method: 'POST' });
+      const collectPayload = await collectResponse.json();
+      collected = collectPayload.data || null;
+      if (collectPayload.data && collectPayload.data.storeError) {
+        toast('info', 'Noticias coletadas', collectPayload.data.storeError);
+      }
+    } catch (error) {
+      if (error.message === 'Sessao expirada') throw error;
+    }
+
+    note.textContent = 'Noticias atualizadas. Relendo cotacoes e agenda...';
+
     const response = await authFetch(API.generate, {
       method: 'POST',
       body: JSON.stringify({ refresh: true })
@@ -423,9 +440,11 @@ const generate = async () => {
 
     const inputs = payload.data?.inputs || {};
     note.dataset.tone = 'ok';
-    note.textContent = 'Gerado as ' + formatDateTime() + ' com '
-      + (inputs.availableAssets || 0) + '/' + (inputs.totalAssets || 0) + ' cotacoes, '
-      + (inputs.newsItems || 0) + ' materias e ' + (inputs.agendaItems || 0) + ' eventos. '
+    note.textContent = 'Atualizado as ' + formatDateTime()
+      + (collected ? ' | ' + collected.collected + ' materias coletadas, ' + collected.stored + ' gravadas' : '')
+      + ' | '
+      + (inputs.availableAssets || 0) + '/' + (inputs.totalAssets || 0) + ' cotacoes e '
+      + (inputs.agendaItems || 0) + ' eventos. '
       + (payload.data?.mode === 'deterministico' ? 'Modo tecnico.' : 'Interpretado por IA.')
 
     say('#editor-feedback', 'Rascunho carregado no editor. Revise antes de publicar.', 'ok');

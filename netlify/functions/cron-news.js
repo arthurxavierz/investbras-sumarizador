@@ -9,23 +9,8 @@
  * limite de 10 segundos do Netlify.
  */
 
-const { json, hasSupabase, supabase, log } = require('./_utils');
-const { collect } = require('./_news');
-
-const toRow = item => ({
-  title: item.title,
-  summary: item.excerpt || null,
-  dek: item.dek || null,
-  category: item.category,
-  source: item.source,
-  source_domain: item.sourceDomain || null,
-  url: item.url,
-  image_url: item.image || null,
-  image_kind: item.imageKind || null,
-  relevance: item.relevance,
-  published_at: item.publishedAt,
-  fetched_at: new Date().toISOString()
-});
+const { json, hasSupabase, log } = require('./_utils');
+const { collect, store } = require('./_news');
 
 const run = async () => {
   const started = Date.now();
@@ -44,26 +29,12 @@ const run = async () => {
     return { stored: 0, meta, elapsedMs: Date.now() - started, skipped: 'supabase-nao-configurado' };
   }
 
-  // url tem restricao unica, entao a mesma materia so atualiza a linha dela.
-  await supabase('news_items', {
-    method: 'POST',
-    body: items.map(toRow),
-    prefer: 'resolution=merge-duplicates,return=minimal'
-  });
-
-  try {
-    await supabase('rpc/purge_old_news', { method: 'POST', body: { days: 14 } });
-  } catch {
-    /* limpeza nao pode derrubar a coleta */
-  }
-
+  const stored = await store(items);
   await log('info', 'news', 'Coleta concluida', {
-    stored: items.length,
-    withPhoto: meta.withPhoto,
-    failures: meta.failures
+    stored, withPhoto: meta.withPhoto, failures: meta.failures
   });
 
-  return { stored: items.length, meta, elapsedMs: Date.now() - started };
+  return { stored, meta, elapsedMs: Date.now() - started };
 };
 
 exports.handler = async () => {
