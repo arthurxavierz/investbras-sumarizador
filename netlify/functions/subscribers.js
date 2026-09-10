@@ -14,7 +14,7 @@ const IMPORT_LIMIT = 2000;
 
 /**
  * Guarda só o que dá para discar: dígitos, e o "+" quando vier código de país.
- * Não valida operadora nem formato regional, porque base de cliente chega em
+ * Não válida operadora nem formato regional, porque base de cliente chega em
  * todo tipo de formato e recusar por máscara perderia contato bom.
  */
 const cleanPhone = value => {
@@ -150,7 +150,7 @@ const applyAction = async (event, session) => {
         phone: cleanPhone(row.phone),
         organization: String((row && row.organization) || '').trim().slice(0, 160) || null,
         status: 'active',
-        source: 'importacao',
+        source: 'importação',
         created_by: session.sub,
         updated_at: new Date().toISOString()
       });

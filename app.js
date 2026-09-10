@@ -74,7 +74,7 @@ const svgEl = (name, attributes) => {
   return node;
 };
 
-/** Caminhos de linha e área para uma serie de valores igualmente espacados. */
+/** Caminhos de linha e área para uma série de valores igualmente espaçados. */
 const seriesPaths = (values, width, height, padding) => {
   const min = Math.min.apply(null, values);
   const max = Math.max.apply(null, values);
@@ -102,7 +102,7 @@ const renderSparkline = (holder, values) => {
   if (!values || values.length < 2) {
     const empty = document.createElement('div');
     empty.className = 'spark-empty';
-    empty.textContent = 'Serie de 5 pregoes indisponível na fonte.';
+    empty.textContent = 'Série de 5 pregões indisponível na fonte.';
     holder.appendChild(empty);
     return;
   }
@@ -147,7 +147,7 @@ const renderAreaChart = (holder, values, meta) => {
   if (!values || values.length < 2) {
     const empty = document.createElement('div');
     empty.className = 'chart-empty';
-    empty.textContent = 'A fonte não devolveu serie historica nesta consulta. Os valores da sessão seguem ao lado.';
+    empty.textContent = 'A fonte não devolveu série histórica nesta consulta. Os valores da sessão seguem ao lado.';
     holder.appendChild(empty);
     return;
   }
@@ -566,7 +566,7 @@ const proxiedImage = value => {
   }
 };
 
-/** Miniatura: foto da materia, marca do veículo ou bloco neutro. */
+/** Miniatura: foto da matéria, marca do veículo ou bloco neutro. */
 const newsThumb = (item, eager) => {
   const image = proxiedImage(item.image);
   if (!image) return '<span class="news-thumb is-blank" aria-hidden="true"></span>';
@@ -581,7 +581,7 @@ const newsThumb = (item, eager) => {
 const newsMeta = item => escapeHtml(item.source || 'Fonte pública')
   + ' / ' + escapeHtml(formatDateTime(item.publishedAt));
 
-/** A sintese vem da linha fina quando existe, senao do resumo do feed. */
+/** A síntese vem da linha fina quando existe, senao do resumo do feed. */
 const newsSummary = (item, limit) => {
   const value = String(item.dek || item.excerpt || '').trim();
   if (!value) return '';
@@ -649,7 +649,7 @@ const loadNews = async () => {
     const meta = payload.meta || {};
     const categories = Object.keys(meta.byCategory || {}).length;
     setText('#news-meta', payload.success
-      ? (payload.data || []).length + ' materias em ' + categories + ' frentes'
+      ? (payload.data || []).length + ' matérias em ' + categories + ' frentes'
       : 'Feeds indisponíveis');
   } catch {
     renderNews([]);

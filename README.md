@@ -1,44 +1,44 @@
 # Investbras Intelligence
 
-Central diaria de inteligencia de mercado para a mesa da Investbras: cafe arabica,
-cambio, bolsas, commodities correlatas, noticias e agenda economica.
+Central diária de inteligencia de mercado para a mesa da Investbras: cafe arabica,
+câmbio, bolsas, commodities correlatas, notícias e agenda econômica.
 
-O principio do produto e simples e vale para todo o codigo: **nenhum numero e inventado**.
-Quando uma fonte nao responde, a interface diz que nao respondeu, em vez de mostrar
-um valor antigo sem aviso ou um placeholder que parece cotacao.
+O principio do produto e simples e vale para todo o codigo: **nenhum número e inventado**.
+Quando uma fonte não responde, a interface diz que não respondeu, em vez de mostrar
+um valor antigo sem aviso ou um placeholder que parece cotação.
 
-## O que ja funciona sem configurar nada
+## O que já funciona sem configurar nada
 
-Basta subir o site. Estes blocos usam fontes publicas e nao dependem de chave:
+Basta subir o site. Estes blocos usam fontes publicas e não dependem de chave:
 
 | Bloco | Fonte real |
 |---|---|
 | Cafe arabica (KC), OHLC e serie de 5 pregoes | ICE via Yahoo Finance |
 | Dolar spot, Ibovespa, S&P 500, Nasdaq, Hang Seng | Yahoo Finance |
-| Acucar, petroleo WTI, ouro, soja, milho | ICE, NYMEX, COMEX e CBOT via Yahoo Finance |
+| Açúcar, petróleo WTI, ouro, soja, milho | ICE, NYMEX, COMEX e CBOT via Yahoo Finance |
 | Dolar PTAX | Banco Central do Brasil (Olinda) |
-| Selic meta e IPCA do mes | Banco Central do Brasil (SGS) |
-| Cafe arabica e robusta no fisico | Indicadores Esalq/B3 via Notícias Agrícolas |
-| Soja, boi gordo e milho no fisico | Indicadores Esalq/B3 via Notícias Agrícolas |
-| Clima nas pracas produtoras | Open-Meteo, sem chave |
-| Agenda economica | Calendario oficial de divulgacoes do IBGE |
-| Noticias | Canal Rural, InfoMoney, Money Times, Agrolink, G1 agro, G1 mundo, Agencia Brasil e quatro buscas tematicas |
+| Selic meta e IPCA do mês | Banco Central do Brasil (SGS) |
+| Cafe arabica e robusta no físico | Indicadores Esalq/B3 via Notícias Agrícolas |
+| Soja, boi gordo e milho no físico | Indicadores Esalq/B3 via Notícias Agrícolas |
+| Clima nas praças produtoras | Open-Meteo, sem chave |
+| Agenda econômica | Calendário oficial de divulgacoes do IBGE |
+| Notícias | Canal Rural, InfoMoney, Money Times, Agrolink, G1 agro, G1 mundo, Agência Brasil e quatro buscas tematicas |
 
-### Bolsa contra fisico
+### Bolsa contra físico
 
 O bloco central da pagina compara duas leituras da mesma saca:
 
 ```text
 Bolsa convertida = (cotacao em c/lb / 100) x 132,2774 lb x dolar
-Fisico           = indicador CEPEA/ESALQ do dia
+Fisico           = indicador do mercado fisico brasileiro no dia
 Diferenca        = fisico menos bolsa convertida
 ```
 
-A conversao usa apenas duas cotacoes reais multiplicadas, e a interface deixa
-explicito que ela **nao** inclui diferencial, tipo, bebida, frete ou impostos.
-O CEPEA entra como o outro lado da conta: quanto a saca vale de fato no Brasil.
+A conversão usa apenas duas cotações reais multiplicadas, e a interface deixa
+explicito que ela **não** inclui diferencial, tipo, bebida, frete ou impostos.
+O indicador do físico entra como o outro lado da conta: quanto a saca vale de fato no Brasil.
 
-A diferenca entre os dois numeros e o que a mesa negocia, e ela so aparece quando
+A diferenca entre os dois números e o que a mesa negocia, e ela só aparece quando
 as duas leituras chegam na mesma consulta.
 
 ### O caso do preço físico
@@ -64,43 +64,43 @@ indisponível em vez de publicar o número de outro produto.
 Não há entrada manual. O último valor de cada indicador fica gravado e entra
 como reserva quando a fonte não responde, sempre rotulado com a idade em dias.
 
-### Clima nas pracas produtoras
+### Clima nas praças produtoras
 
-Quatro pracas acompanhadas pelo Open-Meteo, sem chave de API: Sul de Minas,
-Cerrado Mineiro, Mogiana e Espirito Santo. A pagina mostra chuva prevista para
-sete dias, minima do periodo e classificacao de risco de geada, com o limiar
+Quatro praças acompanhadas pelo Open-Meteo, sem chave de API: Sul de Minas,
+Cerrado Mineiro, Mogiana e Espírito Santo. A pagina mostra chuva prevista para
+sete dias, mínima do periodo e classificacao de risco de geada, com o limiar
 declarado na resposta em vez de escondido no codigo.
 
-## O que precisa de configuracao
+## O que precisa de configuração
 
 | Recurso | Variaveis | Sem elas |
 |---|---|---|
-| Acesso ao painel `/admin` | `SESSION_SECRET` + (`ADMIN_EMAIL` e `ADMIN_PASSWORD`) ou `SUPABASE_ANON_KEY` | O painel nao abre |
-| Publicar a edicao para todos | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Publica so no navegador de quem editou |
-| Disparo de e-mail | `RESEND_API_KEY`, `EMAIL_FROM` | Botao responde que o provedor nao esta configurado |
-| Leitura assistida por IA | `OPENAI_API_KEY` ou `GEMINI_API_KEY` | O rascunho sai em modo tecnico, so com os numeros |
+| Acesso ao painel `/admin` | `SESSION_SECRET` + (`ADMIN_EMAIL` e `ADMIN_PASSWORD`) ou `SUPABASE_ANON_KEY` | O painel não abre |
+| Publicar a edição para todos | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Publica só no navegador de quem editou |
+| Disparo de e-mail | `RESEND_API_KEY`, `EMAIL_FROM` | Botão responde que o provedor não esta configurado |
+| Leitura assistida por IA | `OPENAI_API_KEY` ou `GEMINI_API_KEY` | O texto sai em modo técnico, só com os números |
 
 Nenhuma dessas ausencias quebra a pagina publica.
 
-## Como as noticias chegam
+## Como as notícias chegam
 
-A coleta nao roda no caminho do visitante. Uma funcao agendada (`cron-news`)
+A coleta não roda no caminho do visitante. Uma funcao agendada (`cron-news`)
 executa a cada 20 minutos, busca os feeds, abre as materias principais atras de
-capa e linha fina, e grava tudo no Supabase. A pagina publica so le a tabela.
+capa e linha fina, e grava tudo no Supabase. A pagina publica só le a tabela.
 
-Isso resolve tres problemas de uma vez: o limite de 10 segundos por Function,
+Isso resolve três problemas de uma vez: o limite de 10 segundos por Function,
 o bloqueio por excesso de requisicao nos portais, e a lentidao de abrir uma
 dezena de materias enquanto alguem espera a pagina carregar.
 
-Cada item guarda titulo, linha fina, sintese, veiculo, dominio real e miniatura.
-Quando a materia nao tem foto propria, a miniatura vira a marca do veiculo em
+Cada item guarda título, linha fina, sintese, veículo, dominio real e miniatura.
+Quando a materia não tem foto própria, a miniatura vira a marca do veículo em
 vez de um bloco vazio.
 
-As vagas sao distribuidas por eixo editorial, senao a busca por cafe ocupa o
-feed inteiro: 6 cafe, 5 commodities, 4 geopolitica, 3 energia, 3 cambio e
-3 juros, completando ate 24 com o que sobrar por relevancia.
+As vagas são distribuidas por eixo editorial, senao a busca por cafe ocupa o
+feed inteiro: 6 cafe, 5 commodities, 4 geopolítica, 3 energia, 3 câmbio e
+3 juros, completando até 24 com o que sobrar por relevancia.
 
-Sem Supabase configurado, a funcao publica faz a coleta ao vivo com orcamento
+Sem Supabase configurado, a funcao publica faz a coleta ao vivo com orçamento
 curto. Funciona, mas com menos capas resolvidas.
 
 ## Card do dia
@@ -111,10 +111,10 @@ marca, em dois formatos:
 - **Post** 1920 x 1080
 - **Story** 1080 x 1920
 
-O card reune manchete e resumo da edicao, preco do arabica na bolsa com a serie
-de cinco pregoes, a comparacao entre bolsa e fisico, as cotacoes de apoio e o
-clima das pracas. Todo numero vem das Functions no momento da geracao: dado
-ausente aparece como indisponivel, nunca some.
+O card reune manchete e resumo da edição, preco do arabica na bolsa com a serie
+de cinco pregoes, a comparacao entre bolsa e físico, as cotações de apoio e o
+clima das praças. Todo número vem das Functions no momento da geração: dado
+ausente aparece como indisponível, nunca some.
 
 ## Instalacao
 
@@ -138,15 +138,15 @@ Validar antes de subir:
 npm run build
 ```
 
-O build nao gera `dist`. Ele confere arquivos obrigatorios, sintaxe de todo o
-JavaScript, metadados de cada pagina, ausencia de estilo inline (a CSP bloqueia),
-referencias de `id` entre HTML e JS, e se alguma chave secreta vazou para o frontend.
+O build não gera `dist`. Ele confere arquivos obrigatórios, sintaxe de todo o
+JavaScript, metadados de cada pagina, ausência de estilo inline (a CSP bloqueia),
+referências de `id` entre HTML e JS, e se alguma chave secreta vazou para o frontend.
 
 ## Deploy no Netlify
 
 1. **Add new site > Import an existing project** e conecte o repositorio.
 2. Se o repositorio mantiver esta subpasta, defina o **base directory** como `investbras-market-static`.
-3. O `netlify.toml` ja cuida de build, publish, functions, redirects e headers.
+3. O `netlify.toml` já cuida de build, publish, functions, redirects e headers.
 4. Em **Site configuration > Environment variables**, cadastre pelo menos:
 
 ```text
@@ -171,49 +171,49 @@ Target: hostname fornecido pelo Netlify
 Proxy status: DNS only
 ```
 
-Mantenha **DNS only** ate validar SSL, redirects e Functions. So depois ative o proxy.
+Mantenha **DNS only** até validar SSL, redirects e Functions. Só depois ative o proxy.
 
 ## Supabase
 
-Rode as migracoes na ordem, no SQL Editor:
+Rode as migrações na ordem, no SQL Editor:
 
 1. `supabase/migrations/0001_investbras_market.sql` cria as tabelas, os indices,
    os triggers de `updated_at` e liga **RLS em todas elas**.
 2. `supabase/migrations/0002_news_and_subscribers.sql` adiciona os campos que a
-   coleta de noticias precisa, os campos de cadastro manual de inscrito e a
+   coleta de notícias precisa, os campos de cadastro manual de inscrito e a
    funcao de limpeza `purge_old_news`.
 3. `supabase/migrations/0003_physical_indicators.sql` cria a tabela do mercado
    físico, onde fica o último valor conhecido de cada indicador.
 4. `supabase/migrations/0004_subscriber_phone.sql` adiciona o telefone do
    inscrito, que é opcional.
 
-A unica policy permissiva libera leitura de `market_reports` com `status = 'published'`.
-Todo o resto so e acessivel pela service role, que vive apenas nas Functions.
+A única policy permissiva libera leitura de `market_reports` com `status = 'published'`.
+Todo o resto só e acessivel pela service role, que vive apenas nas Functions.
 
-Para usar Supabase Auth no lugar do operador unico: crie o usuario em
+Para usar Supabase Auth no lugar do operador único: crie o usuário em
 **Authentication > Users**, informe `SUPABASE_ANON_KEY` no ambiente e faca login com
 esse e-mail. O login tenta o Supabase primeiro e cai para `ADMIN_EMAIL` como reserva.
 
 ## Seguranca
 
-- Sessao do painel assinada com HMAC-SHA256 e validade de 12 horas, guardada em
+- Sessão do painel assinada com HMAC-SHA256 e validade de 12 horas, guardada em
   `sessionStorage` (some ao fechar a aba, nunca vai para disco).
-- Toda Function sensivel revalida a assinatura no servidor. O painel nao decide nada sozinho.
-- CSP estrita: script e estilo apenas locais, fontes so do Google, imagem so da
-  propria origem. Por isso o build recusa qualquer `style=` inline.
+- Toda Function sensivel revalida a assinatura no servidor. O painel não decide nada sozinho.
+- CSP estrita: script e estilo apenas locais, fontes só do Google, imagem só da
+  própria origem. Por isso o build recusa qualquer `style=` inline.
 - Comparacao de senha em tempo constante, limite de 8 tentativas por IP a cada 5 minutos.
 - Proxy de imagem com bloqueio de rede interna, limite de 3 MB e sandbox por CSP.
-- Descadastro assinado por token derivado do e-mail: ninguem remove endereco alheio.
+- Descadastro assinado por token derivado do e-mail: ninguem remove endereço alheio.
 
 ## Fluxo da mesa
 
 1. Entrar em `/admin`.
-2. **Atualizar informacoes**: forca a releitura das tres fontes ignorando o cache
+2. **Atualizar informações**: forca a releitura das três fontes ignorando o cache
    e monta o texto no editor. Com chave de IA a leitura vem interpretada; sem
-   chave, vem com os numeros organizados. A area publica ja se atualiza sozinha,
-   entao este botao serve para trazer tudo agora e comecar a edicao.
-3. Revisar e editar. O rascunho salva sozinho no navegador enquanto voce escreve.
-4. **Publicar edicao**: grava no Supabase e a pagina publica passa a exibir.
+   chave, vem com os números organizados. A área publica já se atualiza sozinha,
+   então este botão serve para trazer tudo agora e começar a edição.
+3. Revisar e editar. A edição salva sozinha no navegador enquanto você escreve.
+4. **Publicar edição**: grava no Supabase e a pagina publica passa a exibir.
 5. **Simular e-mail** abre em aba nova exatamente o HTML que o inscrito recebe,
    gerado pelo mesmo modelo do disparo real.
 6. **Enviar teste para mim** antes de **Disparar para a base**. O disparo real
@@ -242,8 +242,8 @@ Contato sem e-mail válido, sem nome ou repetido no arquivo é ignorado e listad
 no relatório da importação. O limite é de 2000 linhas por arquivo.
 
 A regra do prompt de IA e explicita: interpretar apenas os dados recebidos, nunca criar
-cotacao, percentual, data ou evento, e declarar quando uma fonte nao respondeu. Ainda assim,
-revisao humana antes de publicar continua obrigatoria.
+cotação, percentual, data ou evento, e declarar quando uma fonte não respondeu. Ainda assim,
+revisão humana antes de publicar continua obrigatória.
 
 ## Estrutura
 
@@ -285,34 +285,34 @@ investbras-market-static/
     0004_subscriber_phone.sql
 ```
 
-## Notas de operacao
+## Notas de operação
 
 - **Limite do Yahoo Finance.** A fonte bloqueia rajadas. A Function busca todos os
-  simbolos em uma unica chamada, mantem cache de 90 segundos no container e, se a
-  fonte cair, serve a ultima leitura valida marcada como tal por ate 20 minutos.
-- **Serie de 5 pregoes.** A janela intradiaria vem vazia fora do pregao, entao o
-  grafico usa 5 dias. A variacao do dia sai do metadado da sessao regular, nao da janela.
-- **Cafe robusta.** O Yahoo nao expoe robusta em simbolo publico estavel. Ao contratar
-  uma fonte, informe `ROBUSTA_SYMBOL` e o contrato volta a aparecer na grade e na conversao.
-  Preferimos omitir a linha a exibir "indisponivel" para sempre.
-- **Links do Google Noticias.** Eles nao redirecionam para a materia: a pagina e
-  do proprio Google. Por isso a coleta nao tenta buscar capa nesses itens, e usa
-  o `<source url>` do RSS para identificar o veiculo real e montar a miniatura
-  de marca. Os portais diretos entregam foto e texto proprios.
+  simbolos em uma única chamada, mantem cache de 90 segundos no container e, se a
+  fonte cair, serve a última leitura válida marcada como tal por até 20 minutos.
+- **Serie de 5 pregoes.** A janela intradiaria vem vazia fora do pregao, então o
+  gráfico usa 5 dias. A variação do dia sai do metadado da sessão regular, não da janela.
+- **Cafe robusta.** O Yahoo não expoe robusta em simbolo publico estavel. Ao contratar
+  uma fonte, informe `ROBUSTA_SYMBOL` e o contrato volta a aparecer na grade e na conversão.
+  Preferimos omitir a linha a exibir "indisponível" para sempre.
+- **Links do Google Notícias.** Eles não redirecionam para a materia: a pagina e
+  do próprio Google. Por isso a coleta não tenta buscar capa nesses itens, e usa
+  o `<source url>` do RSS para identificar o veículo real e montar a miniatura
+  de marca. Os portais diretos entregam foto e texto próprios.
 - **Preço físico.** Ver "O caso do preço físico" acima. A leitura é automática
   e o painel só mostra o resultado, sem digitação.
-- **PTAX em feriado.** O Banco Central so publica em dia util. A busca anda para
-  tras dia a dia, e agora tem prazo proprio de 7 segundos: sem esse teto um
+- **PTAX em feriado.** O Banco Central só publica em dia util. A busca anda para
+  tras dia a dia, e agora tem prazo próprio de 7 segundos: sem esse teto um
   feriado prolongado podia somar 48 segundos e estourar o limite da Function.
-- **Agenda.** O IBGE ja vem ligado. Para somar Copom, Fed ou USDA, adicione os links
+- **Agenda.** O IBGE já vem ligado. Para somar Copom, Fed ou USDA, adicione os links
   `.ics` em `AGENDA_ICS_URLS`, separados por virgula.
-- **Foto.** O visual da pagina e construido sobre os proprios dados. Se a Investbras
-  quiser uma fotografia de lavoura ou armazem no bloco de cafe, e o unico lugar do
-  layout preparado para receber imagem propria.
+- **Foto.** O visual da pagina e construido sobre os próprios dados. Se a Investbras
+  quiser uma fotografia de lavoura ou armazém no bloco de cafe, e o único lugar do
+  layout preparado para receber imagem própria.
 
-## Proximos passos sugeridos
+## Próximos passos sugeridos
 
-1. Ligar Supabase e Resend para a edicao sair do navegador e chegar na base.
-2. Definir a fonte oficial de cafe robusta e de mercado fisico usada pela mesa.
-3. Publicar por 5 dias seguidos e so entao avaliar cadencia e formato do e-mail.
-4. Registrar `market_snapshots` diariamente para montar historico proprio de preco.
+1. Ligar Supabase e Resend para a edição sair do navegador e chegar na base.
+2. Definir a fonte oficial de cafe robusta e de mercado físico usada pela mesa.
+3. Publicar por 5 dias seguidos e só então avaliar cadencia e formato do e-mail.
+4. Registrar `market_snapshots` diariamente para montar histórico próprio de preco.

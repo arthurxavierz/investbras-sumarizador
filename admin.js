@@ -97,7 +97,7 @@ const readJson = key => {
   }
 };
 
-/** Notificacao de canto. Some sozinha, mas aceita fechar antes. */
+/** Notificação de canto. Some sozinha, mas aceita fechar antes. */
 const toast = (tone, title, detail) => {
   const host = $('#toasts');
   if (!host) return;
@@ -111,7 +111,7 @@ const toast = (tone, title, detail) => {
   const close = document.createElement('button');
   close.type = 'button';
   close.className = 'toast-close';
-  close.setAttribute('aria-label', 'Fechar notificacao');
+  close.setAttribute('aria-label', 'Fechar notificação');
   close.textContent = '×';
   node.appendChild(close);
 
@@ -443,7 +443,7 @@ const generate = async () => {
     const inputs = payload.data?.inputs || {};
     note.dataset.tone = 'ok';
     note.textContent = 'Atualizado as ' + formatDateTime()
-      + (collected ? ' | ' + collected.collected + ' materias coletadas, ' + collected.stored + ' gravadas' : '')
+      + (collected ? ' | ' + collected.collected + ' matérias coletadas, ' + collected.stored + ' gravadas' : '')
       + ' | '
       + (inputs.availableAssets || 0) + '/' + (inputs.totalAssets || 0) + ' cotações e '
       + (inputs.agendaItems || 0) + ' eventos. '
@@ -642,7 +642,7 @@ const renderCard = async () => {
 
   button.disabled = true;
   button.textContent = 'Montando';
-  say('#card-feedback', 'Buscando cotações, preco físico e clima...');
+  say('#card-feedback', 'Buscando cotações, preço físico e clima...');
 
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
@@ -839,7 +839,7 @@ const splitLine = (line, delimiter) => {
 };
 
 const HEADER_MAP = [
-  ['email', /^(e[-\s]?mail|email|mail|endereco de e[-\s]?mail|endereço de e[-\s]?mail)$/i],
+  ['email', /^(e[-\s]?mail|email|mail|endereço de e[-\s]?mail|endereço de e[-\s]?mail)$/i],
   ['name', /^(nome|name|nome completo|contato|responsavel|responsável|cliente)$/i],
   ['phone', /^(telefone|phone|celular|fone|whatsapp|tel|contato telefonico)$/i],
   ['organization', /^(empresa|organizacao|organização|organization|company|fazenda|cooperativa|razao social|razão social)$/i]
