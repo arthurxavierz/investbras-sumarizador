@@ -1,6 +1,6 @@
-/* Investbras Intelligence - area publica.
+/* Investbras Intelligence - área pública.
    Nenhum dado e inventado no cliente: tudo vem das Functions e, quando a fonte
-   nao responde, a interface diz que nao respondeu. */
+   não responde, a interface diz que não respondeu. */
 
 const $ = selector => document.querySelector(selector);
 
@@ -22,7 +22,7 @@ const nf = (value, options) => new Intl.NumberFormat('pt-BR', options).format(va
 const isNumber = value => value !== null && value !== undefined && Number.isFinite(Number(value));
 
 const formatQuantity = (value, unit) => {
-  if (!isNumber(value)) return 'Indisponivel';
+  if (!isNumber(value)) return 'Indisponível';
   const digits = Math.abs(Number(value)) >= 1000 ? 0 : 2;
   const amount = nf(Number(value), { minimumFractionDigits: digits, maximumFractionDigits: digits });
   return unit ? amount + ' ' + unit : amount;
@@ -30,7 +30,7 @@ const formatQuantity = (value, unit) => {
 
 const formatBrl = value => (isNumber(value)
   ? nf(Number(value), { style: 'currency', currency: 'BRL' })
-  : 'Indisponivel');
+  : 'Indisponível');
 
 const formatPercent = value => {
   if (!isNumber(value)) return '--';
@@ -66,7 +66,7 @@ const escapeHtml = value => String(value === null || value === undefined ? '' : 
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
-/* --------------------------------------------------------------- graficos */
+/* --------------------------------------------------------------- gráficos */
 
 const svgEl = (name, attributes) => {
   const node = document.createElementNS(SVG_NS, name);
@@ -74,7 +74,7 @@ const svgEl = (name, attributes) => {
   return node;
 };
 
-/** Caminhos de linha e area para uma serie de valores igualmente espacados. */
+/** Caminhos de linha e área para uma serie de valores igualmente espacados. */
 const seriesPaths = (values, width, height, padding) => {
   const min = Math.min.apply(null, values);
   const max = Math.max.apply(null, values);
@@ -89,20 +89,20 @@ const seriesPaths = (values, width, height, padding) => {
   }));
 
   const line = points.map((point, index) => (index ? 'L' : 'M') + point.x.toFixed(1) + ' ' + point.y.toFixed(1)).join(' ');
-  const area = line
+  const área = line
     + ' L' + points[points.length - 1].x.toFixed(1) + ' ' + (height - padding.bottom).toFixed(1)
     + ' L' + points[0].x.toFixed(1) + ' ' + (height - padding.bottom).toFixed(1) + ' Z';
 
-  return { line, area, points, min, max };
+  return { line, área, points, min, max };
 };
 
-/** Sparkline do hero: acompanha o numero grande, sem eixos nem rotulos. */
+/** Sparkline do hero: acompanha o número grande, sem eixos nem rotulos. */
 const renderSparkline = (holder, values) => {
   holder.replaceChildren();
   if (!values || values.length < 2) {
     const empty = document.createElement('div');
     empty.className = 'spark-empty';
-    empty.textContent = 'Serie de 5 pregoes indisponivel na fonte.';
+    empty.textContent = 'Serie de 5 pregoes indisponível na fonte.';
     holder.appendChild(empty);
     return;
   }
@@ -114,7 +114,7 @@ const renderSparkline = (holder, values) => {
   const svg = svgEl('svg', {
     class: 'spark', viewBox: '0 0 ' + width + ' ' + height, width: '100%', height: String(height),
     role: 'img',
-    'aria-label': 'Tendencia do cafe arabica nos ultimos 5 pregoes, de '
+    'aria-label': 'Tendencia do café arabica nos últimos 5 pregoes, de '
       + formatQuantity(paths.min) + ' a ' + formatQuantity(paths.max) + ' centavos por libra.'
   });
 
@@ -126,7 +126,7 @@ const renderSparkline = (holder, values) => {
   defs.appendChild(gradient);
   svg.appendChild(defs);
 
-  svg.appendChild(svgEl('path', { d: paths.area, fill: 'url(#' + gradientId + ')' }));
+  svg.appendChild(svgEl('path', { d: paths.área, fill: 'url(#' + gradientId + ')' }));
   svg.appendChild(svgEl('path', {
     d: paths.line, fill: 'none', stroke: '#D8AF58', 'stroke-width': '2',
     'stroke-linecap': 'round', 'stroke-linejoin': 'round'
@@ -139,7 +139,7 @@ const renderSparkline = (holder, values) => {
 };
 
 /**
- * Grafico principal com camada de hover: linha de referencia, ponto e tooltip.
+ * Gráfico principal com camada de hover: linha de referência, ponto e tooltip.
  * A tabela de OHLC ao lado cumpre o papel de leitura tabular do mesmo dado.
  */
 const renderAreaChart = (holder, values, meta) => {
@@ -147,7 +147,7 @@ const renderAreaChart = (holder, values, meta) => {
   if (!values || values.length < 2) {
     const empty = document.createElement('div');
     empty.className = 'chart-empty';
-    empty.textContent = 'A fonte nao devolveu serie historica nesta consulta. Os valores da sessao seguem ao lado.';
+    empty.textContent = 'A fonte não devolveu serie historica nesta consulta. Os valores da sessão seguem ao lado.';
     holder.appendChild(empty);
     return;
   }
@@ -160,7 +160,7 @@ const renderAreaChart = (holder, values, meta) => {
   const svg = svgEl('svg', {
     class: 'chart-area', viewBox: '0 0 ' + width + ' ' + height, width: '100%', height: String(height),
     role: 'img',
-    'aria-label': 'Cafe arabica nos ultimos 5 pregoes, variando entre '
+    'aria-label': 'Café arabica nos últimos 5 pregoes, variando entre '
       + formatQuantity(paths.min, meta.unit) + ' e ' + formatQuantity(paths.max, meta.unit) + '.'
   });
 
@@ -171,7 +171,7 @@ const renderAreaChart = (holder, values, meta) => {
   defs.appendChild(gradient);
   svg.appendChild(defs);
 
-  // Grade recessiva: apenas maxima, media e minima da janela.
+  // Grade recessiva: apenas máxima, média e mínima da janela.
   [0, 0.5, 1].forEach(ratio => {
     const y = padding.top + (height - padding.top - padding.bottom) * ratio;
     svg.appendChild(svgEl('line', {
@@ -180,7 +180,7 @@ const renderAreaChart = (holder, values, meta) => {
     }));
   });
 
-  svg.appendChild(svgEl('path', { d: paths.area, fill: 'url(#area-fill)' }));
+  svg.appendChild(svgEl('path', { d: paths.área, fill: 'url(#area-fill)' }));
   svg.appendChild(svgEl('path', {
     d: paths.line, fill: 'none', stroke: '#D8AF58', 'stroke-width': '2',
     'stroke-linecap': 'round', 'stroke-linejoin': 'round'
@@ -248,9 +248,9 @@ const renderAreaChart = (holder, values, meta) => {
   holder.appendChild(tooltip);
 };
 
-/* ------------------------------------------------------ sessao de mercado */
+/* ------------------------------------------------------ sessão de mercado */
 
-/** Cafe C negocia das 4h15 as 13h30 em Nova York, de segunda a sexta. */
+/** Café C negocia das 4h15 as 13h30 em Nova York, de segunda a sexta. */
 const marketSession = () => {
   const now = new Date();
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -293,7 +293,7 @@ const renderTape = assets => {
 
   const visible = assets.filter(asset => asset.status === 'available');
   if (!visible.length) {
-    track.innerHTML = '<span class="tape-empty">Nenhuma referencia de mercado disponivel agora.</span>';
+    track.innerHTML = '<span class="tape-empty">Nenhuma referência de mercado disponível agora.</span>';
     track.style.animation = 'none';
     return;
   }
@@ -303,7 +303,7 @@ const renderTape = assets => {
     + '<strong>' + escapeHtml(formatQuantity(asset.value, asset.unit)) + '</strong>'
     + '<em class="delta">' + escapeHtml(formatPercent(asset.changePercent)) + '</em></span>';
 
-  // Conteudo duplicado para o laco da fita nao mostrar corte.
+  // Conteúdo duplicado para o laco da fita não mostrar corte.
   const markup = visible.map(item).join('');
   track.innerHTML = markup + markup;
   track.style.animation = '';
@@ -315,8 +315,8 @@ const renderGrid = assets => {
   grid.setAttribute('aria-busy', 'false');
 
   if (!assets.length) {
-    grid.innerHTML = '<article class="quote-cell"><h3>Mercados</h3><span class="value" data-empty="true">Indisponivel</span>'
-      + '<footer>Nenhuma fonte publica respondeu.</footer></article>';
+    grid.innerHTML = '<article class="quote-cell"><h3>Mercados</h3><span class="value" data-empty="true">Indisponível</span>'
+      + '<footer>Nenhuma fonte pública respondeu.</footer></article>';
     return;
   }
 
@@ -325,7 +325,7 @@ const renderGrid = assets => {
     return '<article class="quote-cell" data-dir="' + direction(asset.changePercent) + '">'
       + '<h3>' + escapeHtml(asset.name) + '</h3>'
       + '<span class="value"' + (ok ? '' : ' data-empty="true"') + '>'
-      + escapeHtml(ok ? formatQuantity(asset.value, asset.unit) : 'Indisponivel') + '</span>'
+      + escapeHtml(ok ? formatQuantity(asset.value, asset.unit) : 'Indisponível') + '</span>'
       + '<span class="delta">' + escapeHtml(ok ? formatPercent(asset.changePercent) : '--') + '</span>'
       + '<footer>' + escapeHtml(ok ? asset.source + ' / ' + formatDateTime(asset.fetchedAt) : (asset.error || 'Fonte sem resposta.')) + '</footer>'
       + '</article>';
@@ -348,26 +348,26 @@ const renderMacro = macro => {
 let convertedBag = null;
 
 /**
- * Bolsa convertida contra fisico CEPEA. A diferenca entre as duas leituras e
- * o numero que a mesa realmente usa, e so aparece quando as duas existem.
+ * Bolsa convertida contra físico CEPEA. A diferenca entre as duas leituras e
+ * o número que a mesa realmente usa, e só aparece quando as duas existem.
  */
 const renderSpread = (equivalents, physical) => {
   const converted = equivalents && equivalents[0] ? equivalents[0].value : null;
   convertedBag = converted;
 
-  setText('#spread-converted', isNumber(converted) ? formatBrl(converted) : 'Indisponivel');
+  setText('#spread-converted', isNumber(converted) ? formatBrl(converted) : 'Indisponível');
   setText('#spread-converted-note', isNumber(converted)
-    ? 'ICE Nova York pelo dolar do momento'
-    : 'Falta cotacao de bolsa ou de cambio');
+    ? 'ICE Nova York pelo dólar do momento'
+    : 'Falta cotação de bolsa ou de câmbio');
 
   const pending = physical === undefined;
   const physicalValue = physical ? physical.value : null;
 
   setText('#spread-physical', isNumber(physicalValue)
     ? formatBrl(physicalValue)
-    : (pending ? 'Consultando' : 'Indisponivel'));
-  // A origem e a idade do indicador ficam visiveis: leitura de tres dias atras
-  // nao pode passar por cotacao do dia.
+    : (pending ? 'Consultando' : 'Indisponível'));
+  // A origem e a idade do indicador ficam visiveis: leitura de três dias atras
+  // não pode passar por cotação do dia.
   const referenceLabel = isNumber(physicalValue) && physical.referenceDate
     ? physical.referenceDate.split('-').reverse().join('/')
     : null;
@@ -377,9 +377,9 @@ const renderSpread = (equivalents, physical) => {
 
   setText('#spread-physical-note', isNumber(physicalValue)
     ? (physical.source || 'CEPEA/ESALQ')
-      + (referenceLabel ? ', referencia de ' + referenceLabel : '')
+      + (referenceLabel ? ', referência de ' + referenceLabel : '')
       + (age !== null && age > 1 ? ' (' + age + ' dias)' : '')
-    : (pending ? 'Buscando o indicador CEPEA' : 'Indicador CEPEA nao respondeu'));
+    : (pending ? 'Buscando o indicador CEPEA' : 'Indicador CEPEA não respondeu'));
 
   const node = $('#spread-difference');
   if (isNumber(converted) && isNumber(physicalValue)) {
@@ -387,40 +387,46 @@ const renderSpread = (equivalents, physical) => {
     const share = (difference / converted) * 100;
     setText('#spread-difference', (difference > 0 ? '+' : '') + formatBrl(difference));
     if (node) node.dataset.dir = direction(difference);
-    setText('#spread-difference-note', 'Fisico ' + formatPercent(share) + ' frente a bolsa convertida');
+    setText('#spread-difference-note', 'Físico ' + formatPercent(share) + ' frente a bolsa convertida');
   } else {
-    setText('#spread-difference', pending ? 'Calculando' : 'Indisponivel');
+    setText('#spread-difference', pending ? 'Calculando' : 'Indisponível');
     if (node) node.dataset.dir = 'flat';
     setText('#spread-difference-note', pending
-      ? 'Depende do indicador fisico'
+      ? 'Depende do indicador físico'
       : 'Precisa das duas leituras na mesma consulta');
   }
 };
 
-/** Indicadores fisicos de apoio, alem do arabica que ja abre o bloco. */
+/** Indicadores fisicos de apoio, além do arabica que já abre o bloco. */
+/** Demais indicadores do físico, com variação do dia e data de referência. */
 const renderPhysicalList = indicators => {
   const list = $('#convert-list');
   if (!list) return;
 
   const extras = (indicators || []).filter(item => item.key !== 'arabica' && item.status === 'available');
   if (!extras.length) {
-    list.innerHTML = '';
+    list.innerHTML = '<div class="empty-state">Demais indicadores do físico indisponíveis nesta consulta.</div>';
     return;
   }
 
-  list.innerHTML = extras.map(item => '<div class="convert-item">'
-    + '<span>' + escapeHtml(item.name) + '<br><small class="convert-ref">'
-    + escapeHtml(item.unit || '') + '</small></span>'
-    + '<strong>' + escapeHtml(formatBrl(item.value)) + '</strong>'
-    + '</div>').join('');
+  list.innerHTML = extras.map(item => {
+    const unit = String(item.unit || '').replace('BRL/', '');
+    return '<div class="convert-item" data-dir="' + direction(item.changePercent) + '">'
+      + '<span>' + escapeHtml(item.name)
+      + '<br><small class="convert-ref">' + escapeHtml(unit) + '</small></span>'
+      + '<span class="convert-value">'
+      + '<strong>' + escapeHtml(formatBrl(item.value)) + '</strong>'
+      + '<small class="delta">' + escapeHtml(formatPercent(item.changePercent)) + '</small>'
+      + '</span></div>';
+  }).join('');
 };
 
 const FROST_LABEL = {
-  'sem risco': 'Sem risco de geada',
-  observar: 'Geada: observar',
-  atencao: 'Geada: atencao',
-  severo: 'Geada: risco severo',
-  desconhecido: 'Geada: sem leitura'
+  none: 'Sem risco de geada',
+  watch: 'Geada: observar',
+  alert: 'Geada: atenção',
+  severe: 'Geada: risco severo',
+  unknown: 'Geada: sem leitura'
 };
 
 const renderWeather = regions => {
@@ -440,9 +446,9 @@ const renderWeather = regions => {
     + '<span class="crop">' + escapeHtml(region.crop || '') + '</span></header>'
     + '<div class="weather-metrics">'
     + '<div><span>Chuva 7 dias</span><strong>' + escapeHtml(formatQuantity(region.rainNext7, 'mm')) + '</strong></div>'
-    + '<div><span>Minima</span><strong>' + escapeHtml(formatQuantity(region.minTempNext7, 'C')) + '</strong></div>'
+    + '<div><span>Mínima</span><strong>' + escapeHtml(formatQuantity(region.minTempNext7, 'C')) + '</strong></div>'
     + '</div>'
-    + '<span class="frost" data-risk="' + escapeHtml(region.frostRisk || 'desconhecido') + '">'
+    + '<span class="frost" data-risk="' + escapeHtml(region.frostRisk || 'unknown') + '">'
     + escapeHtml(FROST_LABEL[region.frostRisk] || 'Geada: sem leitura') + '</span>'
     + '</article>').join('');
 };
@@ -481,15 +487,15 @@ const renderCoffee = (coffee, usdBrl) => {
   setText('#coffee-high', formatQuantity(coffee.high, coffee.unit));
   setText('#coffee-low', formatQuantity(coffee.low, coffee.unit));
   setText('#coffee-previous', formatQuantity(coffee.previousClose, coffee.unit));
-  setText('#coffee-usd', isNumber(usdBrl) ? formatBrl(usdBrl) : 'Indisponivel');
+  setText('#coffee-usd', isNumber(usdBrl) ? formatBrl(usdBrl) : 'Indisponível');
   setText('#coffee-updated', available ? 'Atualizado ' + formatDateTime(coffee.fetchedAt) : 'Fonte sem resposta');
   setText('#chart-range', coffee.contract || 'KC (ICE NY)');
-  setText('#chart-low', 'Minima da janela ' + formatQuantity(coffee.series && coffee.series.length ? Math.min.apply(null, coffee.series) : null));
-  setText('#chart-high', 'Maxima da janela ' + formatQuantity(coffee.series && coffee.series.length ? Math.max.apply(null, coffee.series) : null));
+  setText('#chart-low', 'Mínima da janela ' + formatQuantity(coffee.series && coffee.series.length ? Math.min.apply(null, coffee.series) : null));
+  setText('#chart-high', 'Máxima da janela ' + formatQuantity(coffee.series && coffee.series.length ? Math.max.apply(null, coffee.series) : null));
 
   setText('#coffee-source', available
-    ? 'Fonte: ' + coffee.source + '. Valor exibido sem interpretacao automatica e sujeito a atraso da bolsa.'
-    : 'Cafe arabica indisponivel: nenhuma fonte confiavel respondeu nesta consulta.');
+    ? 'Fonte: ' + coffee.source + '. Valor exibido sem interpretacao automática e sujeito a atraso da bolsa.'
+    : 'Café arabica indisponível: nenhuma fonte confiavel respondeu nesta consulta.');
 
   const sparkHolder = $('#panel-spark-holder');
   if (sparkHolder) renderSparkline(sparkHolder, coffee.series);
@@ -529,27 +535,27 @@ const loadMarketData = async () => {
 
     setText('#sources-meta', (data.activeSources || 0) + '/' + (data.totalSources || 0) + ' fontes ativas');
 
-    if (payload.stale) setFreshness('stale', 'Ultima leitura valida');
+    if (payload.stale) setFreshness('stale', 'Última leitura válida');
     else if (payload.status === 'partial') setFreshness('stale', 'Fontes parciais');
     else if (payload.success) setFreshness('live', 'Sincronizado ' + formatDateTime(payload.fetchedAt));
-    else setFreshness('down', 'Fontes indisponiveis');
+    else setFreshness('down', 'Fontes indisponíveis');
 
     const bag = (data.bagEquivalents || [])[0];
-    setText('#panel-bag', bag ? formatBrl(bag.value) : 'Indisponivel');
+    setText('#panel-bag', bag ? formatBrl(bag.value) : 'Indisponível');
     setText('#panel-bag-note', bag
-      ? 'Saca de 60 kg pelo dolar de ' + formatBrl(data.usdBrlReference) + '.'
-      : 'Precisa de cotacao de bolsa e de cambio na mesma consulta.');
+      ? 'Saca de 60 kg pelo dólar de ' + formatBrl(data.usdBrlReference) + '.'
+      : 'Precisa de cotação de bolsa e de câmbio na mesma consulta.');
   } catch {
     setFreshness('down', 'Sem conexao com as fontes');
     renderGrid([]);
     renderTape([]);
     renderSpread([], null);
     setText('#sources-meta', 'Camada server-side offline');
-    setText('#panel-bag', 'Indisponivel');
+    setText('#panel-bag', 'Indisponível');
   }
 };
 
-/* ---------------------------------------------------------------- noticias */
+/* ---------------------------------------------------------------- notícias */
 
 const proxiedImage = value => {
   if (!value) return '';
@@ -560,7 +566,7 @@ const proxiedImage = value => {
   }
 };
 
-/** Miniatura: foto da materia, marca do veiculo ou bloco neutro. */
+/** Miniatura: foto da materia, marca do veículo ou bloco neutro. */
 const newsThumb = (item, eager) => {
   const image = proxiedImage(item.image);
   if (!image) return '<span class="news-thumb is-blank" aria-hidden="true"></span>';
@@ -572,7 +578,7 @@ const newsThumb = (item, eager) => {
     + '</span>';
 };
 
-const newsMeta = item => escapeHtml(item.source || 'Fonte publica')
+const newsMeta = item => escapeHtml(item.source || 'Fonte pública')
   + ' / ' + escapeHtml(formatDateTime(item.publishedAt));
 
 /** A sintese vem da linha fina quando existe, senao do resumo do feed. */
@@ -611,11 +617,11 @@ const renderNews = items => {
   if (!items || !items.length) {
     leads.innerHTML = '';
     list.innerHTML = '<div class="empty-state"><strong>Feeds sem resposta</strong>'
-      + 'Nenhuma fonte publica respondeu nesta consulta. A coleta agendada tenta de novo em ate 20 minutos.</div>';
+      + 'Nenhuma fonte pública respondeu nesta consulta. A coleta agendada tenta de novo em até 20 minutos.</div>';
     return;
   }
 
-  // As tres com foto propria abrem a secao; sem foto, a manchete perde forca.
+  // As três com foto própria abrem a seção; sem foto, a manchete perde forca.
   const withPhoto = items.filter(item => item.imageKind === 'foto');
   const featured = (withPhoto.length >= 3 ? withPhoto : items).slice(0, 3);
   const featuredUrls = new Set(featured.map(item => item.url));
@@ -644,10 +650,10 @@ const loadNews = async () => {
     const categories = Object.keys(meta.byCategory || {}).length;
     setText('#news-meta', payload.success
       ? (payload.data || []).length + ' materias em ' + categories + ' frentes'
-      : 'Feeds indisponiveis');
+      : 'Feeds indisponíveis');
   } catch {
     renderNews([]);
-    setText('#news-meta', 'Feeds indisponiveis');
+    setText('#news-meta', 'Feeds indisponíveis');
   }
 };
 
@@ -659,7 +665,7 @@ const renderAgenda = items => {
 
   if (!items || !items.length) {
     list.innerHTML = '<div class="empty-state">Nenhum evento na janela consultada. '
-      + 'Configure AGENDA_ICS_URLS para somar calendarios proprios.</div>';
+      + 'Configure AGENDA_ICS_URLS para somar calendários próprios.</div>';
     return;
   }
 
@@ -682,12 +688,12 @@ const loadAgenda = async () => {
 /* ------------------------------------------------------------ giro do dia */
 
 const EDITION_BLOCKS = [
-  ['coffee', 'Cafe'],
+  ['coffee', 'Café'],
   ['weather', 'Lavoura e clima'],
   ['brazil', 'Brasil'],
   ['global', 'Exterior'],
   ['commodities', 'Commodities'],
-  ['geopolitics', 'Geopolitica e cadeia'],
+  ['geopolitics', 'Geopolítica e cadeia'],
   ['agenda', 'Agenda']
 ];
 
@@ -718,7 +724,7 @@ const renderEdition = report => {
     + (report.author ? '<span>Mesa: ' + escapeHtml(report.author) + '</span>' : '')
     + '</div>';
 
-  setText('#edition-status', 'Edicao de ' + formatDateTime(report.publishedAt));
+  setText('#edition-status', 'Edição de ' + formatDateTime(report.publishedAt));
 };
 
 const loadEdition = async () => {
@@ -729,12 +735,12 @@ const loadEdition = async () => {
       renderEdition(payload.data);
       return;
     }
-    setText('#edition-status', payload.status === 'not-configured' ? 'Publicacao local' : 'Sem edicao publicada');
+    setText('#edition-status', payload.status === 'not-configured' ? 'Publicação local' : 'Sem edição publicada');
   } catch {
-    setText('#edition-status', 'Sem edicao publicada');
+    setText('#edition-status', 'Sem edição publicada');
   }
 
-  // Preview local do painel enquanto o Supabase nao esta ligado.
+  // Preview local do painel enquanto o Supabase não esta ligado.
   try {
     const local = JSON.parse(localStorage.getItem('investbras-published-report') || 'null');
     if (local && local.title) {
@@ -775,7 +781,7 @@ const setupNewsletter = () => {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       emailInput?.setAttribute('aria-invalid', 'true');
       emailInput?.focus();
-      say('Informe um e-mail valido.', 'error');
+      say('Informe um e-mail válido.', 'error');
       return;
     }
 
@@ -799,7 +805,7 @@ const setupNewsletter = () => {
       say(payload.message || payload.error || 'Cadastro processado.', response.ok ? 'ok' : 'error');
       if (response.ok) form.reset();
     } catch {
-      say('Nao foi possivel conectar ao cadastro agora.', 'error');
+      say('Não foi possível conectar ao cadastro agora.', 'error');
     } finally {
       button.disabled = false;
       button.textContent = 'Cadastrar';
@@ -844,7 +850,7 @@ const setupReveal = () => {
   targets.forEach(target => observer.observe(target));
 };
 
-/** Redesenha os graficos quando a largura muda de faixa. */
+/** Redesenha os gráficos quando a largura muda de faixa. */
 const setupResize = () => {
   let width = window.innerWidth;
   let timer;
@@ -877,7 +883,7 @@ const boot = () => {
   loadAgenda();
   loadEdition();
 
-  // Cotacao envelhece rapido: recarrega a cada 3 minutos enquanto a aba estiver visivel.
+  // Cotação envelhece rápido: recarrega a cada 3 minutos enquanto a aba estiver visivel.
   setInterval(() => {
     if (document.visibilityState === 'visible') loadMarketData();
   }, 180000);

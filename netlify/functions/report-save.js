@@ -14,14 +14,14 @@ const readReport = body => {
     sections[field] = text(body[field], { max: 8000, field });
   }
   return {
-    title: text(body.title, { max: 180, field: 'titulo', required: true }),
+    title: text(body.title, { max: 180, field: 'título', required: true }),
     summary: text(body.summary, { max: 1200, field: 'resumo', required: true }),
     editionDate: /^\d{4}-\d{2}-\d{2}$/.test(String(body.editionDate || '')) ? body.editionDate : today(),
     sections
   };
 };
 
-/** Uma edicao por dia. Republicar sobrescreve a linha do mesmo dia. */
+/** Uma edição por dia. Republicar sobrescreve a linha do mesmo dia. */
 const findByDate = async editionDate => {
   const rows = await supabase('market_reports', {
     query: { select: 'id,status', edition_date: 'eq.' + editionDate, order: 'created_at.desc', limit: '1' }
@@ -47,13 +47,13 @@ exports.handler = async event => {
     const body = readBody(event);
     const action = String(body.action || 'draft');
     if (!['draft', 'publish', 'unpublish'].includes(action)) {
-      throw httpError(400, 'Acao invalida.');
+      throw httpError(400, 'Acao inválida.');
     }
 
     if (action === 'unpublish') {
       const editionDate = /^\d{4}-\d{2}-\d{2}$/.test(String(body.editionDate || '')) ? body.editionDate : today();
       const existing = await findByDate(editionDate);
-      if (!existing) throw httpError(404, 'Nenhuma edicao encontrada para esta data.');
+      if (!existing) throw httpError(404, 'Nenhuma edição encontrada para esta data.');
 
       await supabase('market_reports', {
         method: 'PATCH',
@@ -63,8 +63,8 @@ exports.handler = async event => {
       });
 
       reportEndpoint.invalidate();
-      await log('info', 'report', 'Edicao despublicada', { editionDate, by: session.sub });
-      return json(200, { success: true, status: 'unpublished', message: 'Edicao removida da area publica. O rascunho continua salvo.' }, 0);
+      await log('info', 'report', 'Edição despublicada', { editionDate, by: session.sub });
+      return json(200, { success: true, status: 'unpublished', message: 'Edição removida da área pública. O texto continua salvo.' }, 0);
     }
 
     const report = readReport(body);
@@ -101,7 +101,7 @@ exports.handler = async event => {
     }
 
     reportEndpoint.invalidate();
-    await log('info', 'report', publishing ? 'Edicao publicada' : 'Rascunho salvo', {
+    await log('info', 'report', publishing ? 'Edição publicada' : 'Edição salva', {
       editionDate: report.editionDate,
       by: session.sub
     });
@@ -110,11 +110,11 @@ exports.handler = async event => {
       success: true,
       status: publishing ? 'published' : 'draft',
       message: publishing
-        ? 'Edicao publicada. A area publica passa a exibir esta leitura.'
-        : 'Rascunho salvo no Supabase e disponivel para a equipe.',
+        ? 'Edição publicada. A área publica passa a exibir esta leitura.'
+        : 'Edição salva no Supabase e disponível para a equipe.',
       data: (saved && saved[0]) || null
     }, 0);
   } catch (error) {
-    return fail(error, 'Nao foi possivel salvar a edicao.');
+    return fail(error, 'Não foi possível salvar a edição.');
   }
 };

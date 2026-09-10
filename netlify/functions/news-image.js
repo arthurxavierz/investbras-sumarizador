@@ -32,7 +32,7 @@ exports.handler = async event => {
   try {
     url = new URL(src);
   } catch {
-    return plain(400, 'URL de imagem invalida.');
+    return plain(400, 'URL de imagem inválida.');
   }
 
   if (!['http:', 'https:'].includes(url.protocol) || isPrivateHost(url.hostname)) {
@@ -49,7 +49,7 @@ exports.handler = async event => {
 
     const contentType = response.headers.get('content-type') || '';
     if (!response.ok || !contentType.startsWith('image/')) {
-      return plain(502, 'Imagem indisponivel na origem.');
+      return plain(502, 'Imagem indisponível na origem.');
     }
 
     const declared = Number(response.headers.get('content-length') || 0);
@@ -70,6 +70,6 @@ exports.handler = async event => {
       body: buffer.toString('base64')
     };
   } catch {
-    return plain(502, 'Nao foi possivel carregar a imagem.');
+    return plain(502, 'Não foi possível carregar a imagem.');
   }
 };

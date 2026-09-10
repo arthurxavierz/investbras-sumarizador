@@ -7,25 +7,25 @@ const LB_PER_BAG = 132.2774;
 const KG_PER_BAG = 60;
 
 const ASSETS = [
-  { id: 'coffee-c', name: 'Cafe arabica', symbol: 'KC=F', contract: 'KC (ICE NY)', unit: 'c/lb', group: 'cafe', source: 'ICE via Yahoo Finance' },
-  { id: 'usd-brl', name: 'Dolar spot', symbol: 'BRL=X', unit: 'BRL', group: 'cambio', source: 'Yahoo Finance' },
+  { id: 'coffee-c', name: 'Café arabica', symbol: 'KC=F', contract: 'KC (ICE NY)', unit: 'c/lb', group: 'cafe', source: 'ICE via Yahoo Finance' },
+  { id: 'usd-brl', name: 'Dolar spot', symbol: 'BRL=X', unit: 'BRL', group: 'câmbio', source: 'Yahoo Finance' },
   { id: 'ibovespa', name: 'Ibovespa', symbol: '^BVSP', unit: 'pts', group: 'bolsas', source: 'B3 via Yahoo Finance' },
   { id: 'sp500', name: 'S&P 500', symbol: '^GSPC', unit: 'pts', group: 'bolsas', source: 'Yahoo Finance' },
   { id: 'nasdaq', name: 'Nasdaq', symbol: '^IXIC', unit: 'pts', group: 'bolsas', source: 'Yahoo Finance' },
   { id: 'hang-seng', name: 'Hang Seng', symbol: '^HSI', unit: 'pts', group: 'bolsas', source: 'Yahoo Finance' },
-  { id: 'sugar', name: 'Acucar', symbol: 'SB=F', unit: 'c/lb', group: 'commodities', source: 'ICE via Yahoo Finance' },
-  { id: 'oil-wti', name: 'Petroleo WTI', symbol: 'CL=F', unit: 'USD/bbl', group: 'commodities', source: 'NYMEX via Yahoo Finance' },
+  { id: 'sugar', name: 'Açúcar', symbol: 'SB=F', unit: 'c/lb', group: 'commodities', source: 'ICE via Yahoo Finance' },
+  { id: 'oil-wti', name: 'Petróleo WTI', symbol: 'CL=F', unit: 'USD/bbl', group: 'commodities', source: 'NYMEX via Yahoo Finance' },
   { id: 'gold', name: 'Ouro', symbol: 'GC=F', unit: 'USD/oz', group: 'commodities', source: 'COMEX via Yahoo Finance' },
   { id: 'soybean', name: 'Soja', symbol: 'ZS=F', unit: 'c/bu', group: 'commodities', source: 'CBOT via Yahoo Finance' },
   { id: 'corn', name: 'Milho', symbol: 'ZC=F', unit: 'c/bu', group: 'commodities', source: 'CBOT via Yahoo Finance' }
 ];
 
-// O Yahoo nao serve robusta em simbolo publico estavel. Quando a mesa tiver
-// uma fonte propria, basta apontar ROBUSTA_SYMBOL para o ticker correspondente.
+// O Yahoo não serve robusta em simbolo publico estavel. Quando a mesa tiver
+// uma fonte própria, basta apontar ROBUSTA_SYMBOL para o ticker correspondente.
 if (process.env.ROBUSTA_SYMBOL) {
   ASSETS.splice(1, 0, {
     id: 'coffee-robusta',
-    name: 'Cafe robusta',
+    name: 'Café robusta',
     symbol: process.env.ROBUSTA_SYMBOL,
     contract: process.env.ROBUSTA_CONTRACT || 'Robusta',
     unit: process.env.ROBUSTA_UNIT || 'USD/t',
@@ -37,7 +37,7 @@ if (process.env.ROBUSTA_SYMBOL) {
 const BY_SYMBOL = new Map(ASSETS.map(asset => [asset.symbol, asset]));
 
 /**
- * Cache no escopo do modulo. O Netlify reaproveita containers quentes, entao
+ * Cache no escopo do modulo. O Netlify reaproveita containers quentes, então
  * isso evita bater no limite de requisicoes do Yahoo a cada visita.
  */
 const CACHE_MS = 90 * 1000;
@@ -65,7 +65,7 @@ const percent = (value, previous) => (
     : null
 );
 
-/** Serie compacta para o sparkline. Mantem no maximo 60 pontos. */
+/** Serie compacta para o sparkline. Mantem no máximo 60 pontos. */
 const compactSeries = values => {
   const clean = (values || []).filter(point => Number.isFinite(point));
   if (clean.length <= 60) return clean;
@@ -81,8 +81,8 @@ const fromChart = (asset, result) => {
   const quote = result.indicators && result.indicators.quote && result.indicators.quote[0];
   const closes = (quote && quote.close) || (result.close) || [];
 
-  // A janela de 5 dias torna chartPreviousClose inutil para a variacao do dia,
-  // entao o percentual sai do proprio metadado da sessao regular.
+  // A janela de 5 dias torna chartPreviousClose inutil para a variação do dia,
+  // então o percentual sai do próprio metadado da sessão regular.
   const metaPercent = Number.isFinite(meta.regularMarketChangePercent) ? meta.regularMarketChangePercent : null;
   let previousClose = Number.isFinite(meta.previousClose) ? meta.previousClose : null;
   if (previousClose === null && metaPercent !== null && metaPercent !== -100) {
@@ -153,9 +153,9 @@ const bcbDate = offsetDays => {
 };
 
 /**
- * O BCB so publica PTAX em dia util. Em feriado prolongado a busca anda para
- * tras varios dias, e sem um teto isso somava ate 48 segundos de espera,
- * bem alem do limite da Function. O laco agora tem prazo proprio.
+ * O BCB só publica PTAX em dia util. Em feriado prolongado a busca anda para
+ * tras varios dias, e sem um teto isso somava até 48 segundos de espera,
+ * bem além do limite da Function. O laco agora tem prazo próprio.
  */
 const fetchPtax = async () => {
   const deadline = Date.now() + 7000;
@@ -175,7 +175,7 @@ const fetchPtax = async () => {
         name: 'Dolar PTAX',
         symbol: 'USD/BRL',
         unit: 'BRL',
-        group: 'cambio',
+        group: 'câmbio',
         value: quote.cotacaoVenda,
         buy: quote.cotacaoCompra != null ? quote.cotacaoCompra : null,
         change: null,
@@ -202,7 +202,7 @@ const fetchPtax = async () => {
 /** Series abertas do Banco Central: Selic meta e IPCA mensal. */
 const fetchSgs = async (code, label, unit) => {
   try {
-    const url = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.' + code + '/dados/ultimos/1?formato=json';
+    const url = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.' + code + '/dados/últimos/1?formato=json';
     const response = await timeoutFetch(url, {}, 5000);
     if (!response.ok) return null;
     const rows = await response.json();
@@ -222,8 +222,8 @@ const fetchSgs = async (code, label, unit) => {
 };
 
 /**
- * Equivalencia em R$/saca de 60 kg. Sao apenas as duas cotacoes reais
- * multiplicadas, nunca um preco de mercado fisico.
+ * Equivalencia em R$/saca de 60 kg. São apenas as duas cotações reais
+ * multiplicadas, nunca um preco de mercado físico.
  */
 const bagEquivalents = (assets, usdBrl) => {
   if (!Number.isFinite(usdBrl)) return [];
@@ -267,20 +267,20 @@ const buildPayload = async () => {
     quotes = new Map();
   }
 
-  // O cafe arabica precisa de OHLC completo, entao sempre usa a serie detalhada.
+  // O café arabica precisa de OHLC completo, então sempre usa a serie detalhada.
   try {
     quotes.set('KC=F', await fetchChart(BY_SYMBOL.get('KC=F'), '5d'));
   } catch {
     /* mantem o que veio do spark, se houver */
   }
 
-  // Complementa apenas o que faltou, em serie, para nao disparar bloqueio.
+  // Complementa apenas o que faltou, em serie, para não disparar bloqueio.
   for (const asset of ASSETS) {
     if (quotes.has(asset.symbol)) continue;
     try {
       quotes.set(asset.symbol, await fetchChart(asset, '5d'));
     } catch (error) {
-      quotes.set(asset.symbol, unavailable(asset, 'Fonte indisponivel: ' + error.message));
+      quotes.set(asset.symbol, unavailable(asset, 'Fonte indisponível: ' + error.message));
     }
   }
 
@@ -289,12 +289,12 @@ const buildPayload = async () => {
   const results = await Promise.all([
     fetchPtax(),
     fetchSgs(432, 'Selic meta', '% a.a.'),
-    fetchSgs(433, 'IPCA no mes', '%')
+    fetchSgs(433, 'IPCA no mês', '%')
   ]);
   const ptax = results[0];
   const macro = [results[1], results[2]].filter(Boolean);
 
-  // PTAX entra logo depois dos contratos de cafe, antes do restante.
+  // PTAX entra logo depois dos contratos de café, antes do restante.
   const coffeeCount = ASSETS.filter(asset => asset.group === 'cafe').length;
   const assets = ptax
     ? yahooAssets.slice(0, coffeeCount).concat([ptax], yahooAssets.slice(coffeeCount))
@@ -342,7 +342,7 @@ exports.handler = async event => {
       return json(200, Object.assign({}, cache.payload, {
         status: 'stale',
         stale: true,
-        error: 'Fontes instaveis agora. Exibindo a ultima leitura valida.'
+        error: 'Fontes instaveis agora. Exibindo a última leitura válida.'
       }), 30);
     }
     return json(503, {

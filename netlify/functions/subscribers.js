@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Base de inscritos: leitura e escrita, ambas restritas a sessao da mesa.
+ * Base de inscritos: leitura e escrita, ambas restritas a sessão da mesa.
  * GET  lista com busca e filtro de status, mais o resumo do painel.
  * POST aplica uma acao: add, status ou remove.
  */
@@ -10,6 +10,20 @@ const { json, preflight, fail, httpError, readBody, text, isEmail, hasSupabase, 
 const { requireSession } = require('./_auth');
 
 const PAGE_SIZE = 50;
+const IMPORT_LIMIT = 2000;
+
+/**
+ * Guarda só o que dá para discar: dígitos, e o "+" quando vier código de país.
+ * Não valida operadora nem formato regional, porque base de cliente chega em
+ * todo tipo de formato e recusar por máscara perderia contato bom.
+ */
+const cleanPhone = value => {
+  const raw = String(value === null || value === undefined ? '' : value).trim();
+  if (!raw) return null;
+  const digits = raw.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+  if (digits.replace(/\D/g, '').length < 8) return null;
+  return digits.slice(0, 20);
+};
 
 const empty = {
   active: 0,
@@ -23,7 +37,7 @@ const empty = {
 const notConfigured = () => json(200, {
   success: false,
   status: 'not-configured',
-  error: 'Base de inscritos indisponivel. Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.',
+  error: 'Base de inscritos indisponível. Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.',
   data: empty
 }, 0);
 
@@ -34,7 +48,7 @@ const countBy = async status => {
 
 const listSubscribers = async params => {
   const query = {
-    select: 'id,email,name,organization,status,source,notes,created_at,updated_at',
+    select: 'id,email,name,phone,organization,status,source,notes,created_at,updated_at',
     order: 'created_at.desc',
     limit: String(PAGE_SIZE)
   };
@@ -44,7 +58,7 @@ const listSubscribers = async params => {
 
   const search = String(params.search || '').trim().toLowerCase().slice(0, 80);
   if (search) {
-    // Escapa virgula e parenteses para nao quebrar a sintaxe do filtro or.
+    // Escapa virgula e parenteses para não quebrar a sintaxe do filtro or.
     const safe = search.replace(/[(),*]/g, ' ').trim();
     if (safe) query.or = '(email.ilike.*' + safe + '*,name.ilike.*' + safe + '*,organization.ilike.*' + safe + '*)';
   }
@@ -86,15 +100,18 @@ const applyAction = async (event, session) => {
 
   if (action === 'add') {
     const email = String(body.email || '').trim().toLowerCase();
-    if (!isEmail(email)) throw httpError(400, 'Informe um e-mail valido.');
+    if (!isEmail(email)) throw httpError(400, 'Informe um e-mail válido.');
+
+    const name = text(body.name, { max: 120, field: 'nome', required: true });
 
     await supabase('subscribers', {
       method: 'POST',
       body: {
         email,
-        name: text(body.name, { max: 120, field: 'nome' }) || null,
+        name,
+        phone: cleanPhone(body.phone),
         organization: text(body.organization, { max: 160, field: 'empresa' }) || null,
-        notes: text(body.notes, { max: 400, field: 'observacao' }) || null,
+        notes: text(body.notes, { max: 400, field: 'observação' }) || null,
         status: 'active',
         source: 'mesa',
         created_by: session.sub,
@@ -107,11 +124,68 @@ const applyAction = async (event, session) => {
     return { status: 'added', message: 'Inscrito ' + email + ' cadastrado.' };
   }
 
+  if (action === 'import') {
+    const rows = Array.isArray(body.rows) ? body.rows : null;
+    if (!rows || !rows.length) throw httpError(400, 'Nenhuma linha para importar.');
+    if (rows.length > IMPORT_LIMIT) {
+      throw httpError(400, 'Importação limitada a ' + IMPORT_LIMIT + ' linhas por vez.');
+    }
+
+    const seen = new Set();
+    const valid = [];
+    const rejected = [];
+
+    for (const row of rows) {
+      const email = String((row && row.email) || '').trim().toLowerCase();
+      const name = String((row && row.name) || '').trim().slice(0, 120);
+
+      if (!isEmail(email)) { rejected.push({ email: email || '(vazio)', reason: 'e-mail inválido' }); continue; }
+      if (!name) { rejected.push({ email, reason: 'sem nome' }); continue; }
+      if (seen.has(email)) { rejected.push({ email, reason: 'repetido no arquivo' }); continue; }
+
+      seen.add(email);
+      valid.push({
+        email,
+        name,
+        phone: cleanPhone(row.phone),
+        organization: String((row && row.organization) || '').trim().slice(0, 160) || null,
+        status: 'active',
+        source: 'importacao',
+        created_by: session.sub,
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    if (!valid.length) {
+      throw httpError(400, 'Nenhuma linha do arquivo tinha e-mail e nome válidos.');
+    }
+
+    // Lotes de 200 para não estourar o corpo da requisição ao PostgREST.
+    for (let index = 0; index < valid.length; index += 200) {
+      await supabase('subscribers', {
+        method: 'POST',
+        body: valid.slice(index, index + 200),
+        prefer: 'resolution=merge-duplicates,return=minimal'
+      });
+    }
+
+    await log('info', 'subscribe', 'Importação de base', {
+      imported: valid.length, rejected: rejected.length, by: session.sub
+    });
+
+    return {
+      status: 'imported',
+      message: valid.length + ' contato(s) importado(s)'
+        + (rejected.length ? ', ' + rejected.length + ' ignorado(s).' : '.'),
+      rejected: rejected.slice(0, 20)
+    };
+  }
+
   if (action === 'status') {
     const email = String(body.email || '').trim().toLowerCase();
     const status = String(body.status || '');
-    if (!isEmail(email)) throw httpError(400, 'Informe um e-mail valido.');
-    if (!['active', 'unsubscribed', 'bounced'].includes(status)) throw httpError(400, 'Status invalido.');
+    if (!isEmail(email)) throw httpError(400, 'Informe um e-mail válido.');
+    if (!['active', 'unsubscribed', 'bounced'].includes(status)) throw httpError(400, 'Status inválido.');
 
     await supabase('subscribers', {
       method: 'PATCH',
@@ -126,7 +200,7 @@ const applyAction = async (event, session) => {
 
   if (action === 'remove') {
     const email = String(body.email || '').trim().toLowerCase();
-    if (!isEmail(email)) throw httpError(400, 'Informe um e-mail valido.');
+    if (!isEmail(email)) throw httpError(400, 'Informe um e-mail válido.');
 
     await supabase('subscribers', {
       method: 'DELETE',
@@ -138,7 +212,7 @@ const applyAction = async (event, session) => {
     return { status: 'removed', message: email + ' removido da base.' };
   }
 
-  throw httpError(400, 'Acao invalida.');
+  throw httpError(400, 'Acao inválida.');
 };
 
 exports.handler = async event => {
@@ -151,11 +225,16 @@ exports.handler = async event => {
     if (event.httpMethod === 'GET') return readList(event);
     if (event.httpMethod === 'POST') {
       const result = await applyAction(event, session);
-      return json(200, { success: true, status: result.status, message: result.message }, 0);
+      return json(200, {
+        success: true,
+        status: result.status,
+        message: result.message,
+        data: result.rejected ? { rejected: result.rejected } : null
+      }, 0);
     }
 
-    throw httpError(405, 'Metodo nao permitido.');
+    throw httpError(405, 'Metodo não permitido.');
   } catch (error) {
-    return fail(error, 'Nao foi possivel acessar a base de inscritos.');
+    return fail(error, 'Não foi possível acessar a base de inscritos.');
   }
 };

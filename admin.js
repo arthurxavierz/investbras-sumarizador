@@ -1,5 +1,5 @@
 /* Console interno da mesa Investbras.
-   O token de sessao vive em sessionStorage: some ao fechar a aba e nunca e
+   O token de sessão vive em sessionStorage: some ao fechar a aba e nunca e
    gravado em disco. Toda Function sensivel revalida no servidor. */
 
 const $ = selector => document.querySelector(selector);
@@ -10,7 +10,6 @@ const API = {
   health: '/.netlify/functions/health',
   data: '/.netlify/functions/market-data',
   physical: '/.netlify/functions/market-physical',
-  physicalSave: '/.netlify/functions/physical-save',
   news: '/.netlify/functions/market-news',
   generate: '/.netlify/functions/generate-report',
   reportSave: '/.netlify/functions/report-save',
@@ -30,19 +29,19 @@ const STORAGE = {
 const SECTIONS = ['coffee', 'weather', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
 
 const SECTION_LABELS = {
-  coffee: 'Cafe',
+  coffee: 'Café',
   weather: 'Lavoura e clima',
   brazil: 'Brasil',
   global: 'Exterior',
   commodities: 'Commodities',
-  geopolitics: 'Geopolitica e cadeia',
+  geopolitics: 'Geopolítica e cadeia',
   agenda: 'Agenda',
-  notes: 'Observacoes internas'
+  notes: 'Observações internas'
 };
 
 let session = null;
 
-/* ----------------------------------------------------------------- basico */
+/* ----------------------------------------------------------------- básico */
 
 const setText = (selector, value) => {
   const node = $(selector);
@@ -83,8 +82,8 @@ const authFetch = async (url, options = {}) => {
   });
 
   if (response.status === 401) {
-    endSession('Sessao expirada. Entre novamente.');
-    throw new Error('Sessao expirada');
+    endSession('Sessão expirada. Entre novamente.');
+    throw new Error('Sessão expirada');
   }
   return response;
 };
@@ -127,7 +126,7 @@ const toast = (tone, title, detail) => {
   setTimeout(remove, tone === 'error' ? 8000 : 5000);
 };
 
-/* ------------------------------------------------------------------ sessao */
+/* ------------------------------------------------------------------ sessão */
 
 const gateStatus = (tone, title, detail) => {
   const node = $('#gate-status');
@@ -139,7 +138,7 @@ const gateStatus = (tone, title, detail) => {
 
 /**
  * Sem isso, um ambiente mal configurado apenas recusa o login sem dizer por que.
- * O health check e publico, entao da para explicar o problema antes da tentativa.
+ * O health check e público, então da para explicar o problema antes da tentativa.
  */
 const diagnoseGate = async () => {
   try {
@@ -148,7 +147,7 @@ const diagnoseGate = async () => {
 
     if (!checks.session?.ok) {
       gateStatus('down', 'Falta configurar o ambiente',
-        'A variavel <code>SESSION_SECRET</code> nao esta definida. '
+        'A variavel <code>SESSION_SECRET</code> não esta definida. '
         + 'Gere uma com <code>npm run secret</code> e cadastre no Netlify em '
         + 'Site configuration, Environment variables.');
       return;
@@ -156,26 +155,26 @@ const diagnoseGate = async () => {
 
     if (!checks.auth?.ok) {
       gateStatus('down', 'Nenhum acesso cadastrado',
-        'Defina <code>ADMIN_EMAIL</code> e <code>ADMIN_PASSWORD</code> (minimo 10 caracteres) '
+        'Defina <code>ADMIN_EMAIL</code> e <code>ADMIN_PASSWORD</code> (mínimo 10 caracteres) '
         + 'no ambiente, ou configure <code>SUPABASE_ANON_KEY</code> para usar o Supabase Auth.');
       return;
     }
 
     if (!checks.database?.ok) {
       gateStatus('warn', 'Painel liberado, banco pendente',
-        'Voce consegue entrar e gerar rascunho. Sem Supabase, a publicacao fica apenas '
-        + 'neste navegador em vez de ir para a area publica.');
+        'Você consegue entrar e montar a edição. Sem Supabase, a publicação fica apenas '
+        + 'neste navegador em vez de ir para a área pública.');
     }
   } catch {
     gateStatus('down', 'Functions fora do ar',
-      'A camada server-side nao respondeu. Em desenvolvimento, rode <code>npm run dev</code> '
+      'A camada server-side não respondeu. Em desenvolvimento, rode <code>npm run dev</code> '
       + 'em vez de abrir o arquivo direto no navegador.');
   }
 };
 
 /**
- * Visibilidade em tres camadas: atributo hidden, marcador no body e inert.
- * Uma falha de CSS nao pode ser suficiente para expor a area interna.
+ * Visibilidade em três camadas: atributo hidden, marcador no body e inert.
+ * Uma falha de CSS não pode ser suficiente para expor a área interna.
  */
 const setView = view => {
   const screens = { booting: $('#booting'), gate: $('#gate'), console: $('#console') };
@@ -211,7 +210,7 @@ const endSession = message => {
   sessionStorage.removeItem(STORAGE.token);
   session = null;
   showGate(message);
-  if (had && message) toast('info', 'Sessao encerrada', message);
+  if (had && message) toast('info', 'Sessão encerrada', message);
 };
 
 const applySession = user => {
@@ -246,7 +245,7 @@ const login = async event => {
     const payload = await response.json();
 
     if (!response.ok || !payload.data?.token) {
-      say('#login-feedback', payload.error || 'Nao foi possivel entrar.', 'error');
+      say('#login-feedback', payload.error || 'Não foi possível entrar.', 'error');
       return;
     }
 
@@ -258,11 +257,11 @@ const login = async event => {
 
     const user = payload.data.user;
     const until = payload.data.expiresAt
-      ? ' Sessao ativa ate ' + formatDateTime(payload.data.expiresAt) + '.'
+      ? ' Sessão ativa até ' + formatDateTime(payload.data.expiresAt) + '.'
       : '';
     toast('ok', 'Bem-vindo, ' + (user.name || user.email), 'Painel liberado.' + until);
   } catch {
-    say('#login-feedback', 'Sem conexao com o servidor de autenticacao.', 'error');
+    say('#login-feedback', 'Sem conexao com o servidor de autenticação.', 'error');
   } finally {
     button.disabled = false;
     button.textContent = 'Entrar';
@@ -291,13 +290,13 @@ const renderPreview = () => {
   if (!preview) return;
 
   if (!data.title && !data.summary) {
-    preview.innerHTML = '<span class="label">Sem conteudo</span><p>Preencha o editor ou gere um rascunho para ver a previa.</p>';
+    preview.innerHTML = '<span class="label">Sem conteúdo</span><p>Preencha o editor ou atualize as informações para ver a prévia.</p>';
     return;
   }
 
   const filled = SECTIONS.filter(key => key !== 'notes' && String(data[key] || '').trim());
-  preview.innerHTML = '<span class="label">Previa</span>'
-    + '<h3>' + escapeHtml(data.title || 'Sem titulo') + '</h3>'
+  preview.innerHTML = '<span class="label">Prévia</span>'
+    + '<h3>' + escapeHtml(data.title || 'Sem título') + '</h3>'
     + '<p>' + escapeHtml(String(data.summary || 'Sem resumo definido.').slice(0, 240)) + '</p>'
     + '<p class="section-meta">' + filled.length + ' de 6 blocos preenchidos</p>';
 };
@@ -305,7 +304,7 @@ const renderPreview = () => {
 const saveLocal = () => {
   const data = { ...formData(), updatedAt: new Date().toISOString() };
   localStorage.setItem(STORAGE.draft, JSON.stringify(data));
-  setText('#autosave-state', 'Rascunho local salvo ' + formatDateTime());
+  setText('#autosave-state', 'Salvo neste navegador ' + formatDateTime());
 };
 
 const reportPayload = action => {
@@ -318,7 +317,7 @@ const reportPayload = action => {
 const persist = async action => {
   const data = formData();
   if (!String(data.title || '').trim() || !String(data.summary || '').trim()) {
-    say('#editor-feedback', 'Titulo e resumo sao obrigatorios.', 'error');
+    say('#editor-feedback', 'Título e resumo são obrigatórios.', 'error');
     return;
   }
 
@@ -334,8 +333,8 @@ const persist = async action => {
     const payload = await response.json();
 
     if (response.ok) {
-      say('#editor-feedback', payload.message || 'Edicao salva.', 'ok');
-      const titles = { draft: 'Rascunho salvo', publish: 'Edicao publicada', unpublish: 'Edicao despublicada' };
+      say('#editor-feedback', payload.message || 'Edição salva.', 'ok');
+      const titles = { draft: 'Edição salva', publish: 'Edição publicada', unpublish: 'Edição despublicada' };
       toast('ok', titles[action], payload.message || '');
       saveLocal();
       if (action === 'publish') {
@@ -346,28 +345,28 @@ const persist = async action => {
       return;
     }
 
-    // Sem Supabase o painel ainda publica localmente para preview da pagina.
+    // Sem Supabase o painel ainda pública localmente para preview da página.
     if (payload.status === 'not-configured') {
       saveLocal();
       if (action === 'publish') {
         localStorage.setItem(STORAGE.published, JSON.stringify({ ...data, publishedAt: new Date().toISOString(), author: session?.name }));
-        say('#editor-feedback', 'Supabase nao configurado. Edicao publicada apenas neste navegador, como preview.', 'error');
+        say('#editor-feedback', 'Supabase não configurado. Edição publicada apenas neste navegador, como preview.', 'error');
       } else if (action === 'unpublish') {
         localStorage.removeItem(STORAGE.published);
         say('#editor-feedback', 'Preview local removido.', 'ok');
       } else {
-        say('#editor-feedback', 'Supabase nao configurado. Rascunho salvo apenas neste navegador.', 'error');
+        say('#editor-feedback', 'Supabase não configurado. A edição ficou salva apenas neste navegador.', 'error');
       }
       refreshEditionState();
       return;
     }
 
-    say('#editor-feedback', payload.error || 'Nao foi possivel salvar.', 'error');
-    toast('error', 'Nao foi possivel salvar', payload.error || '');
+    say('#editor-feedback', payload.error || 'Não foi possível salvar.', 'error');
+    toast('error', 'Não foi possível salvar', payload.error || '');
   } catch (error) {
-    if (error.message !== 'Sessao expirada') {
+    if (error.message !== 'Sessão expirada') {
       say('#editor-feedback', 'Falha de conexao ao salvar.', 'error');
-      toast('error', 'Falha de conexao', 'As Functions nao responderam ao salvar.');
+      toast('error', 'Falha de conexao', 'As Functions não responderam ao salvar.');
     }
   } finally {
     buttons.forEach(button => { if (button) button.disabled = false; });
@@ -387,14 +386,14 @@ const reportText = () => {
 const copyReport = async () => {
   try {
     await navigator.clipboard.writeText(reportText());
-    say('#editor-feedback', 'Texto copiado para a area de transferencia.', 'ok');
-    toast('ok', 'Texto copiado', 'A edicao inteira foi para a area de transferencia.');
+    say('#editor-feedback', 'Texto copiado para a área de transferencia.', 'ok');
+    toast('ok', 'Texto copiado', 'A edição inteira foi para a área de transferencia.');
   } catch {
-    say('#editor-feedback', 'O navegador bloqueou o acesso a area de transferencia.', 'error');
+    say('#editor-feedback', 'O navegador bloqueou o acesso a área de transferencia.', 'error');
   }
 };
 
-/* -------------------------------------------------------------- producao */
+/* -------------------------------------------------------------- produção */
 
 const generate = async () => {
   const button = $('#generate');
@@ -402,24 +401,24 @@ const generate = async () => {
   button.disabled = true;
   button.textContent = 'Consultando fontes';
   note.dataset.tone = '';
-  note.textContent = 'Buscando cotacoes, noticias e agenda...';
+  note.textContent = 'Buscando cotações, notícias e agenda...';
 
   try {
-    // Primeiro a coleta de noticias, que grava no banco e alimenta a area
-    // publica. Ela pode falhar sem invalidar o resto do fluxo.
+    // Primeiro a coleta de notícias, que grava no banco e alimenta a área
+    // pública. Ela pode falhar sem invalidar o resto do fluxo.
     let collected = null;
     try {
       const collectResponse = await authFetch(API.collectNews, { method: 'POST' });
       const collectPayload = await collectResponse.json();
       collected = collectPayload.data || null;
       if (collectPayload.data && collectPayload.data.storeError) {
-        toast('info', 'Noticias coletadas', collectPayload.data.storeError);
+        toast('info', 'Notícias coletadas', collectPayload.data.storeError);
       }
     } catch (error) {
-      if (error.message === 'Sessao expirada') throw error;
+      if (error.message === 'Sessão expirada') throw error;
     }
 
-    note.textContent = 'Noticias atualizadas. Relendo cotacoes e agenda...';
+    note.textContent = 'Notícias atualizadas. Relendo cotações e agenda...';
 
     const response = await authFetch(API.generate, {
       method: 'POST',
@@ -429,8 +428,8 @@ const generate = async () => {
 
     if (!response.ok) {
       note.dataset.tone = 'error';
-      note.textContent = payload.error || 'Nao foi possivel gerar o rascunho.';
-      toast('error', 'Geracao interrompida', payload.error || '');
+      note.textContent = payload.error || 'Não foi possível atualizar as informações.';
+      toast('error', 'Geração interrompida', payload.error || '');
       return;
     }
 
@@ -446,27 +445,27 @@ const generate = async () => {
     note.textContent = 'Atualizado as ' + formatDateTime()
       + (collected ? ' | ' + collected.collected + ' materias coletadas, ' + collected.stored + ' gravadas' : '')
       + ' | '
-      + (inputs.availableAssets || 0) + '/' + (inputs.totalAssets || 0) + ' cotacoes e '
+      + (inputs.availableAssets || 0) + '/' + (inputs.totalAssets || 0) + ' cotações e '
       + (inputs.agendaItems || 0) + ' eventos. '
-      + (payload.data?.mode === 'deterministico' ? 'Modo tecnico.' : 'Interpretado por IA.')
+      + (payload.data?.mode === 'deterministico' ? 'Modo técnico.' : 'Interpretado por IA.')
 
-    say('#editor-feedback', 'Rascunho carregado no editor. Revise antes de publicar.', 'ok');
+    say('#editor-feedback', 'Texto carregado no editor. Revise antes de publicar.', 'ok');
     loadCounters();
     loadSubscribers();
     loadPhysical();
-    toast('ok', 'Informacoes atualizadas',
-      (inputs.availableAssets || 0) + ' cotacoes, ' + (inputs.newsItems || 0) + ' materias e '
+    toast('ok', 'Informações atualizadas',
+      (inputs.availableAssets || 0) + ' cotações, ' + (inputs.newsItems || 0) + ' materias e '
       + (inputs.agendaItems || 0) + ' eventos. Revise antes de publicar.');
     $('#f-summary')?.focus();
   } catch (error) {
-    if (error.message !== 'Sessao expirada') {
+    if (error.message !== 'Sessão expirada') {
       note.dataset.tone = 'error';
       note.textContent = 'Falha de conexao com as Functions.';
-      toast('error', 'Falha de conexao', 'As Functions nao responderam.');
+      toast('error', 'Falha de conexao', 'As Functions não responderam.');
     }
   } finally {
     button.disabled = false;
-    button.textContent = 'Atualizar informacoes';
+    button.textContent = 'Atualizar informações';
   }
 };
 
@@ -500,10 +499,10 @@ const refreshEditionState = async () => {
     return;
   }
 
-  pill.textContent = draft ? 'Rascunho local' : 'Sem edicao';
+  pill.textContent = draft ? 'Não publicada' : 'Sem edição';
   pill.dataset.state = 'draft';
-  setText('#metric-status', draft ? 'Rascunho' : 'Vazio');
-  setText('#metric-status-detail', draft ? 'Salvo neste navegador' : 'Nada gerado ainda');
+  setText('#metric-status', draft ? 'Não publicada' : 'Vazio');
+  setText('#metric-status-detail', draft ? 'Salva neste navegador' : 'Nada montado ainda');
 };
 
 const loadCounters = () => {
@@ -550,38 +549,38 @@ const loadHealth = async () => {
     const checks = payload.data?.checks || {};
 
     const labels = {
-      session: 'Sessao assinada',
-      auth: 'Autenticacao',
+      session: 'Sessão assinada',
+      auth: 'Autenticação',
       database: 'Banco de dados',
       email: 'Disparo de e-mail',
-      ai: 'Geracao assistida',
-      agenda: 'Agenda economica',
-      news: 'Feeds de noticias'
+      ai: 'Geração assistida',
+      agenda: 'Agenda econômica',
+      news: 'Feeds de notícias'
     };
 
     list.innerHTML = Object.keys(labels).map(key => {
-      const check = checks[key] || { ok: false, detail: 'Sem informacao.' };
+      const check = checks[key] || { ok: false, detail: 'Sem informação.' };
       return '<div class="check" data-ok="' + Boolean(check.ok) + '">'
         + '<i aria-hidden="true"></i>'
         + '<div><strong>' + labels[key] + '</strong><small>' + escapeHtml(check.detail) + '</small></div>'
         + '</div>';
     }).join('');
 
-    setText('#email-provider', checks.email?.ok ? 'Resend conectado' : 'Resend nao configurado');
+    setText('#email-provider', checks.email?.ok ? 'Resend conectado' : 'Resend não configurado');
   } catch {
-    list.innerHTML = '<div class="empty-state">Nao foi possivel ler o health check.</div>';
+    list.innerHTML = '<div class="empty-state">Não foi possível ler o health check.</div>';
   } finally {
     if (button) { button.disabled = false; button.textContent = 'Verificar'; }
   }
 };
 
-/* --------------------------------------------------------- mercado fisico */
+/* --------------------------------------------------------- mercado físico */
 
-const PHYSICAL_LABEL = { arabica: 'Cafe arabica', robusta: 'Cafe robusta', sugar: 'Acucar cristal SP', cattle: 'Boi gordo' };
+const PHYSICAL_LABEL = { arabica: 'Café arabica', robusta: 'Café robusta', sugar: 'Açúcar cristal SP', cattle: 'Boi gordo' };
 
 const brl = value => (Number.isFinite(Number(value))
   ? Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  : 'Indisponivel');
+  : 'Indisponível');
 
 const renderPhysical = data => {
   const host = $('#physical-list');
@@ -589,8 +588,8 @@ const renderPhysical = data => {
 
   const indicators = data.indicators || [];
   setText('#physical-origin', data.canCollectDirectly
-    ? 'Coleta automatica funcionando'
-    : 'Coleta automatica bloqueada, use o registro manual');
+    ? 'Coleta automática funcionando'
+    : 'Coleta automática bloqueada, use o registro manual');
 
   if (!indicators.length) {
     host.innerHTML = '<div class="empty-state">Nenhum indicador conhecido ainda.</div>';
@@ -599,13 +598,13 @@ const renderPhysical = data => {
 
   host.innerHTML = indicators.map(item => {
     const has = item.status === 'available';
-    // Indicador do CEPEA envelhece rapido: acima de tres dias vira alerta.
+    // Indicador do CEPEA envelhece rápido: acima de três dias vira alerta.
     const stale = has && Number(item.ageDays) > 3;
     const origin = item.origin || 'sem origem';
 
     return '<div class="physical-row">'
       + '<span>' + escapeHtml(PHYSICAL_LABEL[item.key] || item.name) + '</span>'
-      + '<strong>' + escapeHtml(has ? brl(item.value) : 'Indisponivel') + '</strong>'
+      + '<strong>' + escapeHtml(has ? brl(item.value) : 'Indisponível') + '</strong>'
       + '<span class="origin-tag" data-origin="' + escapeHtml(origin) + '"'
       + (stale ? ' data-age="velho"' : '') + '>'
       + escapeHtml(has
@@ -623,52 +622,8 @@ const loadPhysical = async () => {
     const payload = await response.json();
     renderPhysical(payload.data || {});
   } catch {
-    setText('#physical-origin', 'Nao foi possivel consultar');
+    setText('#physical-origin', 'Não foi possível consultar');
   }
-};
-
-const setupPhysical = () => {
-  const dateInput = $('#physical-date');
-  if (dateInput) dateInput.value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-
-  $('#physical-form')?.addEventListener('submit', async event => {
-    event.preventDefault();
-    const button = $('#physical-save');
-    const key = $('#physical-key').value;
-    const value = $('#physical-value').value.trim();
-
-    if (!value) {
-      say('#physical-feedback', 'Informe o valor do indicador.', 'error');
-      $('#physical-value').focus();
-      return;
-    }
-
-    button.disabled = true;
-    try {
-      const response = await authFetch(API.physicalSave, {
-        method: 'POST',
-        body: JSON.stringify({ key, value, referenceDate: $('#physical-date').value })
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        say('#physical-feedback', payload.error || 'Nao foi possivel registrar.', 'error');
-        toast('error', 'Indicador nao registrado', payload.error || '');
-        return;
-      }
-
-      say('#physical-feedback', payload.message || 'Registrado.', 'ok');
-      toast('ok', 'Indicador registrado', payload.message || '');
-      $('#physical-value').value = '';
-      loadPhysical();
-    } catch (error) {
-      if (error.message !== 'Sessao expirada') {
-        say('#physical-feedback', 'Falha de conexao.', 'error');
-      }
-    } finally {
-      button.disabled = false;
-    }
-  });
 };
 
 /* ------------------------------------------------------------ card do dia */
@@ -687,7 +642,7 @@ const renderCard = async () => {
 
   button.disabled = true;
   button.textContent = 'Montando';
-  say('#card-feedback', 'Buscando cotacoes, preco fisico e clima...');
+  say('#card-feedback', 'Buscando cotações, preco físico e clima...');
 
   try {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
@@ -712,6 +667,7 @@ const renderCard = async () => {
       assets: market.assets || [],
       bagEquivalents: market.bagEquivalents || [],
       physicalArabica: physical.physicalArabica || null,
+      indicators: physical.indicators || [],
       weather: physical.weather || []
     }, $('#card-format').value);
 
@@ -732,11 +688,11 @@ const renderCard = async () => {
     say('#card-feedback', format.width + ' x ' + format.height + ', ' + size + ' kB. Pronto para baixar.', 'ok');
     toast('ok', 'Card gerado', format.width + ' x ' + format.height + ' com os dados do momento.');
   } catch (error) {
-    say('#card-feedback', 'Nao foi possivel montar o card agora.', 'error');
-    toast('error', 'Card nao gerado', error.message || '');
+    say('#card-feedback', 'Não foi possível montar o card agora.', 'error');
+    toast('error', 'Card não gerado', error.message || '');
   } finally {
     button.disabled = false;
-    button.textContent = 'Gerar previa';
+    button.textContent = 'Gerar prévia';
   }
 };
 
@@ -751,14 +707,14 @@ const renderSubscribers = data => {
   if (!host) return;
 
   setText('#subs-summary', data.active + ' ativos / ' + data.unsubscribed
-    + ' saidas / ' + data.bounced + ' retornos');
+    + ' saídas / ' + data.bounced + ' retornos');
 
   const list = data.list || [];
   if (!list.length) {
     host.innerHTML = '<div class="empty-state">'
       + (subsQuery.search || subsQuery.status
         ? 'Nenhum inscrito corresponde ao filtro.'
-        : 'Base vazia. Cadastre o primeiro endereco acima ou aguarde inscricoes pela area publica.')
+        : 'Base vazia. Cadastre o primeiro endereço acima ou aguarde inscrições pela área pública.')
       + '</div>';
     return;
   }
@@ -771,8 +727,9 @@ const renderSubscribers = data => {
 
     return '<div class="subs-row">'
       + '<div><strong>' + escapeHtml(item.email) + '</strong>'
-      + '<small>' + escapeHtml(item.name || 'Sem nome') + ' / entrou em '
-      + escapeHtml(formatDateTime(item.created_at)) + '</small></div>'
+      + '<small>' + escapeHtml(item.name || 'Sem nome')
+      + (item.phone ? ' / ' + escapeHtml(item.phone) : '')
+      + ' / entrou em ' + escapeHtml(formatDateTime(item.created_at)) + '</small></div>'
       + '<span class="org">' + escapeHtml(item.organization || '') + '</span>'
       + '<span class="subs-state" data-state="' + escapeHtml(status) + '">'
       + escapeHtml(STATUS_LABEL[status] || status) + '</span>'
@@ -795,20 +752,20 @@ const loadSubscribers = async () => {
     setText('#metric-subs', String(data.active || 0));
     setText('#metric-subs-detail', payload.success
       ? (data.unsubscribed || 0) + ' descadastrados'
-      : 'Supabase nao configurado');
+      : 'Supabase não configurado');
 
     if (!payload.success) {
-      $('#subs-list').innerHTML = '<div class="empty-state"><strong>Base indisponivel</strong>'
+      $('#subs-list').innerHTML = '<div class="empty-state"><strong>Base indisponível</strong>'
         + escapeHtml(payload.error || 'Configure o Supabase para gerenciar inscritos.') + '</div>';
-      setText('#subs-summary', 'Supabase nao configurado');
+      setText('#subs-summary', 'Supabase não configurado');
       return;
     }
 
     renderSubscribers(data);
     renderCampaigns(data.campaigns);
   } catch (error) {
-    if (error.message !== 'Sessao expirada') {
-      setText('#subs-summary', 'Base indisponivel');
+    if (error.message !== 'Sessão expirada') {
+      setText('#subs-summary', 'Base indisponível');
       setText('#metric-subs', '--');
     }
   }
@@ -830,11 +787,197 @@ const subscriberAction = async (body, successTitle) => {
     loadSubscribers();
     return true;
   } catch (error) {
-    if (error.message !== 'Sessao expirada') {
+    if (error.message !== 'Sessão expirada') {
       say('#subs-feedback', 'Falha de conexao.', 'error');
-      toast('error', 'Falha de conexao', 'A base nao respondeu.');
+      toast('error', 'Falha de conexao', 'A base não respondeu.');
     }
     return false;
+  }
+};
+
+/* ------------------------------------------------------------ leitor CSV */
+
+/**
+ * Separador mais provável entre os candidatos, medido pela regularidade das
+ * linhas. Base exportada do Excel brasileiro sai com ponto e vírgula; a de
+ * sistema costuma sair com vírgula.
+ */
+const detectDelimiter = lines => {
+  const candidates = [';', ',', '\t', '|'];
+  let best = ',';
+  let bestScore = -1;
+
+  for (const candidate of candidates) {
+    const counts = lines.slice(0, 12).map(line => line.split(candidate).length);
+    const average = counts.reduce((total, value) => total + value, 0) / counts.length;
+    if (average < 2) continue;
+    const spread = Math.max.apply(null, counts) - Math.min.apply(null, counts);
+    const score = average - spread * 2;
+    if (score > bestScore) { bestScore = score; best = candidate; }
+  }
+  return best;
+};
+
+/** Divide respeitando aspas, que é onde nome com vírgula costuma quebrar. */
+const splitLine = (line, delimiter) => {
+  const values = [];
+  let current = '';
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') { current += '"'; index += 1; }
+      else quoted = !quoted;
+      continue;
+    }
+    if (character === delimiter && !quoted) { values.push(current); current = ''; continue; }
+    current += character;
+  }
+  values.push(current);
+  return values.map(value => value.trim());
+};
+
+const HEADER_MAP = [
+  ['email', /^(e[-\s]?mail|email|mail|endereco de e[-\s]?mail|endereço de e[-\s]?mail)$/i],
+  ['name', /^(nome|name|nome completo|contato|responsavel|responsável|cliente)$/i],
+  ['phone', /^(telefone|phone|celular|fone|whatsapp|tel|contato telefonico)$/i],
+  ['organization', /^(empresa|organizacao|organização|organization|company|fazenda|cooperativa|razao social|razão social)$/i]
+];
+
+const mapHeader = header => {
+  const mapping = {};
+  header.forEach((cell, index) => {
+    const clean = String(cell || '').replace(/^\uFEFF/, '').trim();
+    for (const entry of HEADER_MAP) {
+      if (entry[1].test(clean) && mapping[entry[0]] === undefined) mapping[entry[0]] = index;
+    }
+  });
+  return mapping;
+};
+
+/** Sem cabeçalho reconhecível, deduz a coluna pelo conteúdo das células. */
+const guessColumns = rows => {
+  const mapping = {};
+  const sample = rows.slice(0, 20);
+  const columns = sample[0] ? sample[0].length : 0;
+
+  for (let index = 0; index < columns; index += 1) {
+    const hits = sample.filter(row => /@/.test(String(row[index] || ''))).length;
+    if (hits > sample.length / 2) { mapping.email = index; break; }
+  }
+
+  for (let index = 0; index < columns; index += 1) {
+    if (index === mapping.email) continue;
+    const hits = sample.filter(row => {
+      const digits = String(row[index] || '').replace(/\D/g, '');
+      return digits.length >= 8 && digits.length <= 15;
+    }).length;
+    if (hits > sample.length / 2) { mapping.phone = index; break; }
+  }
+
+  for (let index = 0; index < columns; index += 1) {
+    if (index === mapping.email || index === mapping.phone) continue;
+    const hits = sample.filter(row => /[a-zà-ú]{3,}/i.test(String(row[index] || ''))).length;
+    if (hits > sample.length / 2) { mapping.name = index; break; }
+  }
+
+  return mapping;
+};
+
+const parseCsv = text => {
+  const clean = String(text || '').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+  const lines = clean.split('\n').filter(line => line.trim());
+  if (!lines.length) return { rows: [], mapping: {}, delimiter: ',' };
+
+  const delimiter = detectDelimiter(lines);
+  const table = lines.map(line => splitLine(line, delimiter));
+
+  let mapping = mapHeader(table[0]);
+  let body = table;
+
+  if (mapping.email !== undefined) body = table.slice(1);
+  else mapping = guessColumns(table);
+
+  const pick = (cells, field) => (mapping[field] === undefined ? '' : (cells[mapping[field]] || ''));
+
+  const rows = body
+    .map(cells => ({
+      email: pick(cells, 'email'),
+      name: pick(cells, 'name'),
+      phone: pick(cells, 'phone'),
+      organization: pick(cells, 'organization')
+    }))
+    .filter(row => row.email);
+
+  return { rows, mapping, delimiter };
+};
+
+const renderImportReport = (title, detail, rejected) => {
+  const host = $('#import-report');
+  if (!host) return;
+  host.hidden = false;
+  host.innerHTML = '<strong>' + escapeHtml(title) + '</strong>' + escapeHtml(detail)
+    + (rejected && rejected.length
+      ? '<ul>' + rejected.map(item =>
+        '<li>' + escapeHtml(item.email) + ': ' + escapeHtml(item.reason) + '</li>').join('') + '</ul>'
+      : '');
+};
+
+const importCsv = async file => {
+  const input = $('#subs-csv');
+  const label = input ? input.closest('.file-button') : null;
+  const original = label ? label.firstChild.nodeValue : '';
+  if (label) label.firstChild.nodeValue = 'Lendo arquivo ';
+
+  try {
+    const text = await file.text();
+    const parsed = parseCsv(text);
+
+    if (!parsed.rows.length) {
+      renderImportReport('Nada importado',
+        'Não encontrei nenhuma coluna de e-mail no arquivo. Confira se ele tem cabeçalho '
+        + 'ou se os endereços estão em uma coluna própria.', []);
+      toast('error', 'Arquivo não reconhecido', 'Nenhuma coluna de e-mail encontrada.');
+      return;
+    }
+
+    if (parsed.mapping.name === undefined) {
+      renderImportReport('Nada importado',
+        'Encontrei os e-mails, mas nenhuma coluna de nome. O nome é obrigatório: '
+        + 'renomeie a coluna para "nome" e tente de novo.', []);
+      toast('error', 'Falta a coluna de nome', 'O nome é obrigatório na importação.');
+      return;
+    }
+
+    const response = await authFetch(API.subscribers, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'import', rows: parsed.rows })
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      renderImportReport('Importação recusada', payload.error || 'Não foi possível importar.', []);
+      toast('error', 'Importação recusada', payload.error || '');
+      return;
+    }
+
+    const separator = parsed.delimiter === '\t' ? 'tabulação' : parsed.delimiter;
+    renderImportReport('Importação concluída',
+      payload.message + ' Arquivo lido com separador "' + separator + '" e '
+      + parsed.rows.length + ' linha(s) com e-mail.',
+      (payload.data && payload.data.rejected) || []);
+    toast('ok', 'Base importada', payload.message || '');
+    loadSubscribers();
+  } catch (error) {
+    if (error.message !== 'Sessão expirada') {
+      renderImportReport('Falha na leitura',
+        'Não consegui ler o arquivo. Salve como CSV e tente de novo.', []);
+      toast('error', 'Falha na importação', error.message || '');
+    }
+  } finally {
+    if (label) label.firstChild.nodeValue = original;
+    if (input) input.value = '';
   }
 };
 
@@ -845,8 +988,15 @@ const setupSubscribers = () => {
     const email = $('#subs-email').value.trim();
 
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      say('#subs-feedback', 'Informe um e-mail valido.', 'error');
+      say('#subs-feedback', 'Informe um e-mail válido.', 'error');
       $('#subs-email').focus();
+      return;
+    }
+
+    const name = $('#subs-name').value.trim();
+    if (!name) {
+      say('#subs-feedback', 'O nome é obrigatório.', 'error');
+      $('#subs-name').focus();
       return;
     }
 
@@ -854,7 +1004,8 @@ const setupSubscribers = () => {
     const ok = await subscriberAction({
       action: 'add',
       email,
-      name: $('#subs-name').value.trim(),
+      name,
+      phone: $('#subs-phone').value.trim(),
       organization: $('#subs-org').value.trim()
     }, 'Inscrito cadastrado');
     button.disabled = false;
@@ -870,7 +1021,7 @@ const setupSubscribers = () => {
     const act = button.dataset.act;
 
     if (act === 'remove') {
-      const warning = 'Remover ' + email + ' da base?\n\nA acao nao pode ser desfeita.';
+      const warning = 'Remover ' + email + ' da base?\n\nA acao não pode ser desfeita.';
       if (!window.confirm(warning)) return;
       subscriberAction({ action: 'remove', email }, 'Inscrito removido');
       return;
@@ -889,6 +1040,11 @@ const setupSubscribers = () => {
     }, 350);
   });
 
+  $('#subs-csv')?.addEventListener('change', event => {
+    const file = event.target.files && event.target.files[0];
+    if (file) importCsv(file);
+  });
+
   $('#subs-status')?.addEventListener('change', event => {
     subsQuery.status = event.target.value;
     loadSubscribers();
@@ -898,15 +1054,15 @@ const setupSubscribers = () => {
 /* --------------------------------------------------------------- e-mail */
 
 /**
- * Abre a previa em aba nova por submit de formulario. Nao da para usar fetch
- * aqui: o resultado precisa ser um documento de topo, com a propria CSP, para
+ * Abre a prévia em aba nova por submit de formulario. Não da para usar fetch
+ * aqui: o resultado precisa ser um documento de topo, com a própria CSP, para
  * que os estilos embutidos do e-mail rendereizem como no cliente de e-mail.
  */
 const previewEmail = () => {
   const data = formData();
   if (!String(data.title || '').trim() || !String(data.summary || '').trim()) {
-    say('#email-feedback', 'A edicao precisa de titulo e resumo para a previa.', 'error');
-    toast('error', 'Previa indisponivel', 'Preencha titulo e resumo antes.');
+    say('#email-feedback', 'A edição precisa de título e resumo para a prévia.', 'error');
+    toast('error', 'Prévia indisponível', 'Preencha título e resumo antes.');
     return;
   }
 
@@ -922,7 +1078,7 @@ const previewEmail = () => {
   });
 
   $('#preview-form').submit();
-  toast('info', 'Previa aberta', 'O e-mail abriu em uma aba nova, exatamente como o inscrito recebe.');
+  toast('info', 'Prévia aberta', 'O e-mail abriu em uma aba nova, exatamente como o inscrito recebe.');
 };
 
 const sendEmail = async isTest => {
@@ -934,13 +1090,13 @@ const sendEmail = async isTest => {
     return;
   }
   if (!String(data.title || '').trim() || !String(data.summary || '').trim()) {
-    say('#email-feedback', 'A edicao precisa de titulo e resumo antes do disparo.', 'error');
+    say('#email-feedback', 'A edição precisa de título e resumo antes do disparo.', 'error');
     return;
   }
 
   if (!isTest) {
     const confirmed = window.confirm(
-      'Disparar esta edicao para TODA a base de inscritos ativos?\n\nA acao nao pode ser desfeita.'
+      'Disparar esta edição para TODA a base de inscritos ativos?\n\nA acao não pode ser desfeita.'
     );
     if (!confirmed) return;
   }
@@ -969,11 +1125,11 @@ const sendEmail = async isTest => {
     const payload = await response.json();
     say('#email-feedback', payload.message || payload.error || 'Disparo processado.', response.ok ? 'ok' : 'error');
     toast(response.ok ? 'ok' : 'error',
-      response.ok ? (isTest ? 'Teste enviado' : 'Disparo concluido') : 'Disparo nao concluido',
+      response.ok ? (isTest ? 'Teste enviado' : 'Disparo concluido') : 'Disparo não concluido',
       payload.message || payload.error || '');
     if (response.ok) loadSubscribers();
   } catch (error) {
-    if (error.message !== 'Sessao expirada') say('#email-feedback', 'Falha de conexao no disparo.', 'error');
+    if (error.message !== 'Sessão expirada') say('#email-feedback', 'Falha de conexao no disparo.', 'error');
   } finally {
     button.disabled = false;
     button.textContent = original;
@@ -1004,7 +1160,6 @@ const bootConsole = () => {
   bootDone = true;
 
   setupSubscribers();
-  setupPhysical();
 
   $('#generate')?.addEventListener('click', generate);
   $('#save-draft')?.addEventListener('click', () => persist('draft'));
@@ -1022,12 +1177,12 @@ const bootConsole = () => {
   $('#preview-email')?.addEventListener('click', previewEmail);
   $('#send-test')?.addEventListener('click', () => sendEmail(true));
   $('#send-campaign')?.addEventListener('click', () => sendEmail(false));
-  $('#logout')?.addEventListener('click', () => endSession('Sessao encerrada.'));
+  $('#logout')?.addEventListener('click', () => endSession('Sessão encerrada.'));
 
   let typingTimer;
   $('#report-form')?.addEventListener('input', () => {
     renderPreview();
-    setText('#autosave-state', 'Alteracoes nao salvas');
+    setText('#autosave-state', 'Alteracoes não salvas');
     clearTimeout(typingTimer);
     typingTimer = setTimeout(saveLocal, 1500);
   });
@@ -1059,7 +1214,7 @@ const boot = async () => {
     showConsole();
     bootConsole();
   } catch {
-    showGate('Nao foi possivel validar a sessao agora.');
+    showGate('Não foi possível validar a sessão agora.');
   }
 };
 

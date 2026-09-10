@@ -24,7 +24,7 @@ exports.handler = async event => {
     const password = String(body.password || '');
 
     if (!isEmail(email) || password.length < 6) {
-      return json(400, { success: false, status: 'invalid-credentials', error: 'E-mail ou senha invalidos.' }, 0);
+      return json(400, { success: false, status: 'invalid-credentials', error: 'E-mail ou senha inválidos.' }, 0);
     }
 
     let account = null;
@@ -33,7 +33,7 @@ exports.handler = async event => {
 
     if (!account) {
       await log('warning', 'auth', 'Tentativa de login recusada', { email, ip: clientIp(event) });
-      return json(401, { success: false, status: 'unauthorized', error: 'E-mail ou senha invalidos.' }, 0);
+      return json(401, { success: false, status: 'unauthorized', error: 'E-mail ou senha inválidos.' }, 0);
     }
 
     const session = issue(account);
@@ -41,6 +41,6 @@ exports.handler = async event => {
 
     return json(200, { success: true, status: 'authenticated', data: session }, 0);
   } catch (error) {
-    return fail(error, 'Nao foi possivel validar o acesso agora.');
+    return fail(error, 'Não foi possível validar o acesso agora.');
   }
 };

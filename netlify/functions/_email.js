@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Modelo do e-mail da edicao. Fica separado porque duas funcoes precisam do
+ * Modelo do e-mail da edição. Fica separado porque duas funcoes precisam do
  * mesmo HTML: o disparo real e o simulador do painel. Se cada uma tivesse a
- * sua copia, a previa mentiria sobre o que o inscrito recebe.
+ * sua copia, a prévia mentiria sobre o que o inscrito recebe.
  */
 
 const crypto = require('crypto');
@@ -24,12 +24,12 @@ const tokenFor = email => crypto
   .slice(0, 32);
 
 const SECTION_LABELS = [
-  ['coffee', 'Cafe'],
+  ['coffee', 'Café'],
   ['weather', 'Lavoura e clima'],
   ['brazil', 'Brasil'],
   ['global', 'Exterior'],
   ['commodities', 'Commodities'],
-  ['geopolitics', 'Geopolitica e cadeia'],
+  ['geopolitics', 'Geopolítica e cadeia'],
   ['agenda', 'Agenda']
 ];
 
@@ -61,7 +61,7 @@ const buildHtml = (report, email) => {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #ddd8cc;">
     <tr><td style="padding:28px 32px;background:#0C0B09;">
       <p style="margin:0;font-size:11px;letter-spacing:.28em;color:#D8AF58;">INVESTBRAS INTELLIGENCE</p>
-      <p style="margin:6px 0 0;font-size:12px;color:#98928A;">Giro do mercado de cafe e commodities</p>
+      <p style="margin:6px 0 0;font-size:12px;color:#98928A;">Giro do mercado de café e commodities</p>
     </td></tr>
     <tr><td style="padding:32px 32px 0;">
       <h1 style="margin:0 0 12px;font-size:26px;line-height:1.2;color:#17150f;">${escapeHtml(report.title)}</h1>
@@ -69,12 +69,12 @@ const buildHtml = (report, email) => {
     </td></tr>
     ${sections}
     <tr><td style="padding:30px 32px 34px;">
-      <a href="${SITE_URL()}" style="display:inline-block;padding:13px 22px;background:#D8AF58;color:#151310;text-decoration:none;font-weight:700;font-size:14px;">Ver a edicao completa</a>
+      <a href="${SITE_URL()}" style="display:inline-block;padding:13px 22px;background:#D8AF58;color:#151310;text-decoration:none;font-weight:700;font-size:14px;">Ver a edição completa</a>
     </td></tr>
     <tr><td style="padding:20px 32px 28px;border-top:1px solid #e6e1d6;">
       <p style="margin:0 0 10px;font-size:11px;line-height:1.6;color:#7d7973;">
-        Conteudo informativo. Nao constitui recomendacao de investimento, oferta ou garantia de resultado.
-        Cotacoes sao das fontes citadas em cada bloco e podem sofrer revisao.
+        Conteúdo informativo. Não constitui recomendacao de investimento, oferta ou garantia de resultado.
+        Cotações são das fontes citadas em cada bloco e podem sofrer revisão.
       </p>
       <p style="margin:0;font-size:11px;color:#7d7973;">
         Enviado para ${escapeHtml(email)}. <a href="${unsubscribeUrl}" style="color:#7d7973;">Cancelar o recebimento</a>
@@ -90,7 +90,7 @@ const buildText = report => {
     const value = String((report.sections && report.sections[key]) || '').trim();
     if (value) blocks.push(label.toUpperCase(), value, '');
   }
-  blocks.push('Conteudo informativo. Nao constitui recomendacao de investimento.');
+  blocks.push('Conteúdo informativo. Não constitui recomendacao de investimento.');
   return blocks.join('\n');
 };
 

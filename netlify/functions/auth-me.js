@@ -16,6 +16,6 @@ exports.handler = async event => {
       }
     }, 0);
   } catch (error) {
-    return fail(error, 'Sessao invalida.');
+    return fail(error, 'Sessão inválida.');
   }
 };

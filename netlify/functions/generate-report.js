@@ -6,6 +6,7 @@ const marketData = require('./market-data');
 const marketNews = require('./market-news');
 const marketAgenda = require('./market-agenda');
 const marketPhysical = require('./market-physical');
+const { FROST_LABEL } = marketPhysical;
 
 const SECTIONS = ['coffee', 'weather', 'brazil', 'global', 'geopolitics', 'commodities', 'agenda', 'notes'];
 
@@ -18,7 +19,7 @@ const call = async (handler, forceRefresh) => {
   }
 };
 
-// Number(null) e 0, entao o teste precisa descartar nulo antes de converter.
+// Number(null) e 0, então o teste precisa descartar nulo antes de converter.
 const number = value => (value === null || value === undefined || value === ''
   ? null
   : (Number.isFinite(Number(value)) ? Number(value) : null));
@@ -27,7 +28,7 @@ const assetLine = asset => {
   if (!asset || asset.status !== 'available') return null;
   const change = number(asset.changePercent);
   const variation = change === null
-    ? 'variacao nao informada pela fonte'
+    ? 'variação não informada pela fonte'
     : (change > 0 ? '+' : '') + change.toFixed(2) + '%';
   return asset.name + ': ' + asset.value + ' ' + (asset.unit || '') + ' (' + variation + ')';
 };
@@ -37,7 +38,7 @@ const lines = (assets, ids) => ids
   .filter(Boolean)
   .join('\n');
 
-/** Rascunho deterministico: so reorganiza os numeros que chegaram das fontes. */
+/** Montagem determinística: só reorganiza os números que chegaram das fontes. */
 const deterministicDraft = ({ assets, news, agenda, bagEquivalents, macro, indicators, weather }) => {
   const available = assets.filter(asset => asset.status === 'available');
   const coffee = assets.find(asset => asset.id === 'coffee-c');
@@ -48,50 +49,50 @@ const deterministicDraft = ({ assets, news, agenda, bagEquivalents, macro, indic
     coffeeLines.push(equivalent.name + ': R$ ' + equivalent.value.toFixed(2) + ' por saca de 60 kg. Calculo: ' + equivalent.formula + '.');
   }
 
-  // Fisico e clima entram como blocos proprios: sao a leitura que a bolsa
-  // sozinha nao da.
+  // Físico e clima entram como blocos próprios: são a leitura que a bolsa
+  // sozinha não da.
   const available_ = (indicators || []).filter(item => item.status === 'available');
   const physicalLines = available_.map(item =>
     item.name + ' (CEPEA): R$ ' + item.value.toFixed(2) + ' por ' + item.unit.replace('BRL/', '')
-    + (item.referenceDate ? ', referencia de ' + item.referenceDate.split('-').reverse().join('/') : ''));
+    + (item.referenceDate ? ', referência de ' + item.referenceDate.split('-').reverse().join('/') : ''));
 
   const arabicaPhysical = available_.find(item => item.key === 'arabica');
   const converted = bagEquivalents[0];
   if (arabicaPhysical && converted) {
     const difference = arabicaPhysical.value - converted.value;
-    physicalLines.push('Diferenca entre fisico e bolsa convertida: R$ ' + difference.toFixed(2)
+    physicalLines.push('Diferenca entre físico e bolsa convertida: R$ ' + difference.toFixed(2)
       + ' por saca (' + ((difference / converted.value) * 100).toFixed(1) + '%).');
   }
 
   const weatherLines = (weather || [])
     .filter(region => region.status === 'available')
     .map(region => region.name + ' (' + region.crop + '): ' + region.rainNext7
-      + ' mm previstos em 7 dias, minima de ' + region.minTempNext7 + ' C, geada ' + region.frostRisk + '.');
+      + ' mm previstos em 7 dias, mínima de ' + region.minTempNext7 + ' C, geada ' + (FROST_LABEL[region.frostRisk] || region.frostRisk) + '.');
 
   return {
     title: 'Giro do mercado Investbras',
     summary: available.length
-      ? 'Rascunho montado com ' + available.length + ' referencias de mercado disponiveis. Revise contexto, causalidade e risco antes de publicar.'
-      : 'Rascunho criado sem cotacoes disponiveis. Conecte as fontes ou escreva manualmente antes de publicar.',
+      ? 'Edição montada com ' + available.length + ' referências de mercado disponíveis. Revise contexto, causalidade e risco antes de publicar.'
+      : 'Edição montada sem cotações disponíveis. Conecte as fontes ou escreva manualmente antes de publicar.',
     coffee: coffeeLines.length
       ? coffeeLines.join('\n')
         + (physicalLines.length ? '\n\n' + physicalLines.join('\n') : '')
-        + '\n\nEquivalencias sao conversao direta de bolsa. Diferencial, tipo, bebida e frete entram na leitura da mesa.'
-      : 'Cafe indisponivel nesta consulta. Nao publicar valor sem fonte confirmada.',
+        + '\n\nEquivalencias são conversão direta de bolsa. Diferencial, tipo, bebida e frete entram na leitura da mesa.'
+      : 'Café indisponível nesta consulta. Não publicar valor sem fonte confirmada.',
     weather: weatherLines.length
       ? weatherLines.join('\n')
-      : 'Leitura climatica das pracas produtoras indisponivel nesta consulta.',
+      : 'Leitura climatica das praças produtoras indisponível nesta consulta.',
     brazil: [lines(assets, ['usd-ptax', 'usd-brl', 'ibovespa']), macro.map(item => item.label + ': ' + item.value + ' ' + item.unit + ' (ref. ' + item.reference + ')').join('\n')]
       .filter(Boolean).join('\n') || 'Brasil sem dados suficientes nesta consulta.',
     global: lines(assets, ['sp500', 'nasdaq', 'hang-seng']) || 'Exterior sem dados suficientes nesta consulta.',
-    geopolitics: 'Registrar apenas eventos verificados com impacto em cafe, insumos, energia, frete, cambio ou politica monetaria.',
-    commodities: lines(assets, ['sugar', 'oil-wti', 'gold', 'soybean', 'corn']) || 'Commodities indisponiveis nesta consulta.',
+    geopolitics: 'Registrar apenas eventos verificados com impacto em café, insumos, energia, frete, câmbio ou política monetária.',
+    commodities: lines(assets, ['sugar', 'oil-wti', 'gold', 'soybean', 'corn']) || 'Commodities indisponíveis nesta consulta.',
     agenda: agenda.length
       ? agenda.slice(0, 6).map(item => item.day + ' ' + item.time + ' - ' + item.title + ' (' + item.source + ')').join('\n')
       : 'Agenda sem eventos na janela consultada.',
     notes: news.length
       ? 'Manchetes captadas:\n' + news.slice(0, 6).map(item => '- ' + item.title + ' (' + item.source + ')').join('\n')
-      : 'Nenhum feed de noticias respondeu nesta consulta.'
+      : 'Nenhum feed de notícias respondeu nesta consulta.'
   };
 };
 
@@ -105,20 +106,20 @@ const providerConfig = () => {
 };
 
 const SYSTEM_PROMPT = [
-  'Voce e o analista da mesa de mercado da Investbras, corretora de cafe.',
-  'Escreva em portugues do Brasil, tom profissional e direto, sem jargao de marketing.',
-  'REGRA ABSOLUTA: use somente os numeros do JSON fornecido. Nunca invente cotacao, percentual, data ou evento.',
-  'Se um dado estiver ausente, escreva explicitamente que a fonte nao respondeu.',
-  'Nao faca recomendacao de compra ou venda. Descreva o que os dados mostram e quais riscos observar.',
-  'Cada secao tem no maximo 3 paragrafos curtos. Sem titulos internos, sem listas com marcador, sem emoji.',
-  'Responda apenas com um objeto JSON valido com as chaves: title, summary, coffee, weather, brazil, global, geopolitics, commodities, agenda, notes.'
+  'Você e o analista da mesa de mercado da Investbras, corretora de café.',
+  'Escreva em português do Brasil, tom profissional e direto, sem jargao de marketing.',
+  'REGRA ABSOLUTA: use somente os números do JSON fornecido. Nunca invente cotação, percentual, data ou evento.',
+  'Se um dado estiver ausente, escreva explicitamente que a fonte não respondeu.',
+  'Não faca recomendacao de compra ou venda. Descreva o que os dados mostram e quais riscos observar.',
+  'Cada seção tem no máximo 3 paragrafos curtos. Sem títulos internos, sem listas com marcador, sem emoji.',
+  'Responda apenas com um objeto JSON válido com as chaves: title, summary, coffee, weather, brazil, global, geopolitics, commodities, agenda, notes.'
 ].join(' ');
 
 const buildUserPrompt = input => [
-  'Data da edicao: ' + new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '.',
-  'Dados verificados disponiveis:',
+  'Data da edição: ' + new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '.',
+  'Dados verificados disponíveis:',
   JSON.stringify(input, null, 2),
-  'Monte o giro do dia com foco em cafe arabica e robusta, incluindo a diferenca entre bolsa e fisico CEPEA, depois clima nas pracas produtoras, cambio, bolsas, commodities correlatas, risco geopolitico e agenda.'
+  'Monte o giro do dia com foco em café arabica e robusta, incluindo a diferenca entre bolsa e físico CEPEA, depois clima nas praças produtoras, câmbio, bolsas, commodities correlatas, risco geopolítico e agenda.'
 ].join('\n\n');
 
 const parseAiJson = raw => {
@@ -173,7 +174,7 @@ const callGemini = async input => {
   return parseAiJson(text);
 };
 
-/** So aceita a resposta da IA se ela preencher o essencial. */
+/** Só aceita a resposta da IA se ela preencher o essencial. */
 const mergeDraft = (base, ai) => {
   if (!ai || typeof ai !== 'object') return null;
   const merged = Object.assign({}, base);
@@ -196,7 +197,7 @@ exports.handler = async event => {
     requireMethod(event, ['POST']);
     const session = requireSession(event);
 
-    // O painel pode pedir releitura: ignora o cache quente das tres fontes.
+    // O painel pode pedir releitura: ignora o cache quente das três fontes.
     const forceRefresh = readBody(event).refresh === true;
     const payloads = await Promise.all([
       call(marketData, forceRefresh),
@@ -228,26 +229,26 @@ exports.handler = async event => {
     if (provider && hasInput) {
       try {
         const aiInput = {
-          cotacoes: assets.filter(asset => asset.status === 'available').map(asset => ({
+          cotações: assets.filter(asset => asset.status === 'available').map(asset => ({
             ativo: asset.name,
             valor: asset.value,
             unidade: asset.unit,
             variacaoPercentual: number(asset.changePercent),
-            maxima: asset.high,
-            minima: asset.low,
+            máxima: asset.high,
+            mínima: asset.low,
             fonte: asset.source
           })),
-          indisponiveis: assets.filter(asset => asset.status !== 'available').map(asset => asset.name),
+          indisponíveis: assets.filter(asset => asset.status !== 'available').map(asset => asset.name),
           equivalenciasSaca: bagEquivalents,
           precoFisicoCepea: indicators.filter(item => item.status === 'available').map(item => ({
-            produto: item.name, valor: item.value, unidade: item.unit, referencia: item.referenceDate
+            produto: item.name, valor: item.value, unidade: item.unit, referência: item.referenceDate
           })),
           climaPracasProdutoras: weather.filter(region => region.status === 'available').map(region => ({
-            praca: region.name, cultivo: region.crop, chuvaProximos7Dias: region.rainNext7,
-            minimaPrevista: region.minTempNext7, riscoGeada: region.frostRisk
+            praça: region.name, cultivo: region.crop, chuvaProximos7Dias: region.rainNext7,
+            minimaPrevista: region.minTempNext7, riscoGeada: FROST_LABEL[region.frostRisk] || region.frostRisk
           })),
           macroBrasil: macro,
-          manchetes: news.slice(0, 12).map(item => ({ titulo: item.title, fonte: item.source, tema: item.category })),
+          manchetes: news.slice(0, 12).map(item => ({ título: item.title, fonte: item.source, tema: item.category })),
           agenda: agenda.slice(0, 10).map(item => ({ dia: item.day, hora: item.time, evento: item.title, fonte: item.source }))
         };
 
@@ -257,21 +258,21 @@ exports.handler = async event => {
           draft = merged;
           mode = provider;
         } else {
-          aiError = 'A resposta da IA veio incompleta. Mantido o rascunho tecnico.';
+          aiError = 'A resposta da IA veio incompleta. Mantido o texto técnico.';
         }
       } catch (error) {
-        aiError = 'IA indisponivel nesta execucao: ' + error.message;
-        await log('warning', 'ai', 'Falha na geracao assistida', { provider, message: error.message });
+        aiError = 'IA indisponível nesta execucao: ' + error.message;
+        await log('warning', 'ai', 'Falha na geração assistida', { provider, message: error.message });
       }
     }
 
     const message = mode === 'deterministico'
       ? (provider
-        ? (aiError || 'Rascunho tecnico gerado sem interpretacao da IA.')
-        : 'Rascunho tecnico gerado. Configure OPENAI_API_KEY ou GEMINI_API_KEY para a leitura assistida.')
-      : 'Rascunho interpretado por IA sobre dados verificados. Revisao humana obrigatoria antes de publicar.';
+        ? (aiError || 'Texto técnico montado sem interpretação da IA.')
+        : 'Texto técnico montado. Configure OPENAI_API_KEY ou GEMINI_API_KEY para a leitura assistida.')
+      : 'Texto interpretado por IA sobre dados verificados. Revisão humana obrigatória antes de publicar.';
 
-    await log('info', 'report', 'Rascunho gerado', { mode, by: session.sub });
+    await log('info', 'report', 'Edição montada', { mode, by: session.sub });
 
     return json(200, {
       success: Boolean(hasInput),
@@ -295,6 +296,6 @@ exports.handler = async event => {
       }
     }, 0);
   } catch (error) {
-    return fail(error, 'Nao foi possivel gerar o rascunho agora.');
+    return fail(error, 'Não foi possível atualizar as informações agora.');
   }
 };

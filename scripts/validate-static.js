@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Validacao de build. O site e estatico, entao nao existe bundler para
+ * Validacao de build. O site e estatico, então não existe bundler para
  * quebrar em erro: esta checagem faz esse papel antes do deploy.
  */
 
@@ -15,7 +15,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const problems = [];
 const fail = message => problems.push(message);
 
-/* 1. Arquivos obrigatorios --------------------------------------------- */
+/* 1. Arquivos obrigatórios --------------------------------------------- */
 
 const REQUIRED = [
   'index.html', 'admin.html', '404.html',
@@ -45,13 +45,13 @@ const REQUIRED = [
   'netlify/functions/_news.js',
   'netlify/functions/_email.js',
   'netlify/functions/market-physical.js',
-  'netlify/functions/physical-save.js',
+  'netlify/functions/_indicators.js',
   'supabase/migrations/0003_physical_indicators.sql',
   'supabase/migrations/0002_news_and_subscribers.sql'
 ];
 
 for (const file of REQUIRED) {
-  if (!fs.existsSync(path.join(root, file))) fail('Arquivo obrigatorio ausente: ' + file);
+  if (!fs.existsSync(path.join(root, file))) fail('Arquivo obrigatório ausente: ' + file);
 }
 
 if (problems.length) {
@@ -82,8 +82,8 @@ for (const [file, html] of Object.entries(pages)) {
   if (!html.includes('favicon.svg')) fail(file + ': sem favicon.');
   if (!/<title>[^<]+<\/title>/.test(html)) fail(file + ': sem title.');
 
-  // A CSP nao permite atributo style. Um inline aqui vira layout quebrado
-  // apenas em producao, entao a checagem precisa ser no build.
+  // A CSP não permite atributo style. Um inline aqui vira layout quebrado
+  // apenas em produção, então a checagem precisa ser no build.
   if (/\sstyle="/.test(html)) fail(file + ': possui atributo style inline, bloqueado pela CSP.');
   if (/<style[\s>]/.test(html)) fail(file + ': possui bloco <style> inline, bloqueado pela CSP.');
 }
@@ -91,7 +91,7 @@ for (const [file, html] of Object.entries(pages)) {
 if (!pages['index.html'].includes('og:image')) fail('index.html: sem og:image.');
 if (!pages['admin.html'].includes('noindex')) fail('admin.html: precisa de robots noindex.');
 
-/* 4. Referencias de id entre HTML e JS ---------------------------------- */
+/* 4. Referências de id entre HTML e JS ---------------------------------- */
 
 const idsIn = html => new Set(Array.from(html.matchAll(/\sid="([^"]+)"/g), match => match[1]));
 
@@ -107,7 +107,7 @@ const referencedIds = source => {
 const checkIds = (script, page) => {
   const available = idsIn(pages[page]);
   for (const id of referencedIds(read(script))) {
-    if (!available.has(id)) fail(script + ' referencia #' + id + ', que nao existe em ' + page + '.');
+    if (!available.has(id)) fail(script + ' referência #' + id + ', que não existe em ' + page + '.');
   }
 };
 
@@ -124,13 +124,13 @@ for (const key of ['SESSION_SECRET', 'SUPABASE_SERVICE_ROLE_KEY', 'RESEND_API_KE
 for (const file of ['app.js', 'admin.js', 'index.html', 'admin.html']) {
   const source = read(file);
   if (/(service_role|sk-[A-Za-z0-9]{20,}|re_[A-Za-z0-9]{20,})/.test(source)) {
-    fail(file + ': parece conter uma chave secreta. Chaves so no ambiente server-side.');
+    fail(file + ': parece conter uma chave secreta. Chaves só no ambiente server-side.');
   }
 }
 
 if (fs.existsSync(path.join(root, '.env'))) {
   const gitignore = fs.existsSync(path.join(root, '.gitignore')) ? read('.gitignore') : '';
-  if (!gitignore.includes('.env')) fail('.env existe mas nao esta no .gitignore.');
+  if (!gitignore.includes('.env')) fail('.env existe mas não esta no .gitignore.');
 }
 
 /* 6. Consistencia da CSP ------------------------------------------------ */

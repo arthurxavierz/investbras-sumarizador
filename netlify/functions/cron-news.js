@@ -1,11 +1,11 @@
 'use strict';
 
 /**
- * Coleta agendada de noticias.
+ * Coleta agendada de notícias.
  *
  * Roda de 20 em 20 minutos, com folga de tempo para abrir as materias atras
- * de capa e linha fina, e grava o resultado no Supabase. A funcao publica so
- * le a tabela, entao a pagina nunca espera por feed lento nem estoura o
+ * de capa e linha fina, e grava o resultado no Supabase. A funcao publica só
+ * le a tabela, então a pagina nunca espera por feed lento nem estoura o
  * limite de 10 segundos do Netlify.
  */
 
@@ -54,7 +54,7 @@ exports.handler = async () => {
       success: false,
       source: 'investbras-cron-news',
       status: 'failed',
-      error: 'Nao foi possivel concluir a coleta.'
+      error: 'Não foi possível concluir a coleta.'
     }, 0);
   }
 };

@@ -35,23 +35,23 @@ const toEvent = ({ title, startsAt, source, category, allDay, url }) => ({
   day: dayFormatter.format(startsAt),
   time: allDay ? 'Dia todo' : timeFormatter.format(startsAt),
   allDay: Boolean(allDay),
-  category: category || 'Agenda economica',
+  category: category || 'Agenda econômica',
   source,
   url: url || null
 });
 
 /**
- * Calendario oficial de divulgacoes do IBGE. Cobre IPCA, PIB, PNAD e o
- * Levantamento Sistematico da Producao Agricola, que move o mercado de cafe.
+ * Calendário oficial de divulgacoes do IBGE. Cobre IPCA, PIB, PNAD e o
+ * Levantamento Sistematico da Produção Agrícola, que move o mercado de café.
  */
 const RELEVANT_IBGE = [
-  'ipca', 'inpc', 'pib', 'producao agricola', 'producao industrial',
-  'pnad', 'comercio', 'servicos', 'custo', 'inpc', 'sistematico'
+  'ipca', 'inpc', 'pib', 'produção agrícola', 'produção industrial',
+  'pnad', 'comercio', 'serviços', 'custo', 'inpc', 'sistematico'
 ];
 
 const fetchIbge = async () => {
   const { from, to } = windowBounds();
-  const url = 'https://servicodados.ibge.gov.br/api/v3/calendario/?de=' + isoDate(from) + '&ate=' + isoDate(to);
+  const url = 'https://servicodados.ibge.gov.br/api/v3/calendario/?de=' + isoDate(from) + '&até=' + isoDate(to);
   const response = await retryFetch(url, {}, 7000, 2);
   const payload = await response.json();
   const items = (payload && payload.items) || [];
@@ -67,7 +67,7 @@ const fetchIbge = async () => {
     );
     if (Number.isNaN(startsAt.getTime())) return null;
 
-    const title = strip(item.titulo || item.nome_produto);
+    const title = strip(item.título || item.nome_produto);
     const relevant = RELEVANT_IBGE.some(term => title.toLowerCase().includes(term));
 
     return toEvent({
@@ -102,7 +102,7 @@ const parseCalendar = (ics, source) => {
     const parsed = parseIcsDate(readField(block, 'DTSTART'));
     if (!parsed) return null;
     return toEvent({
-      title: strip(readField(block, 'SUMMARY')) || 'Evento economico',
+      title: strip(readField(block, 'SUMMARY')) || 'Evento econômico',
       startsAt: parsed.date,
       allDay: parsed.allDay,
       source,
@@ -161,7 +161,7 @@ const buildPayload = async () => {
     success: items.length > 0,
     source: sources.length ? sources.join(', ') : 'IBGE',
     status: items.length ? (failures ? 'partial' : 'available') : 'unavailable',
-    error: items.length ? null : 'Nenhuma agenda respondeu. Configure AGENDA_ICS_URLS para somar calendarios proprios.',
+    error: items.length ? null : 'Nenhuma agenda respondeu. Configure AGENDA_ICS_URLS para somar calendários próprios.',
     data: items
   };
 };
@@ -183,7 +183,7 @@ exports.handler = async event => {
     if (cache.payload) return json(200, Object.assign({}, cache.payload, { stale: true }), 60);
     return json(503, {
       success: false,
-      source: 'Agenda economica',
+      source: 'Agenda econômica',
       status: 'unavailable',
       error: 'Nenhuma agenda respondeu dentro do tempo limite.',
       data: []

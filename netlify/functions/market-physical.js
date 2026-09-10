@@ -1,140 +1,62 @@
 'use strict';
 
 /**
- * Mercado fisico e clima das regioes produtoras.
+ * Mercado físico e clima das regioes produtoras.
  *
- * Duas fontes que faltavam para a mesa fechar a leitura do cafe:
+ * Duas fontes que faltavam para a mesa fechar a leitura do café:
  *
- * 1. Indicadores CEPEA/ESALQ, que sao a referencia de preco fisico no Brasil.
- *    A bolsa de Nova York diz quanto vale o contrato; o CEPEA diz quanto vale
- *    a saca aqui. A diferenca entre os dois e o que a mesa negocia.
+ * 1. Indicadores de preço do mercado físico brasileiro: café arábica e
+ *    robusta, soja, boi gordo e milho. A bolsa de Nova York diz quanto vale o
+ *    contrato; o indicador diz quanto vale a saca aqui. A diferença entre as
+ *    duas leituras é o que a mesa negocia.
  *
- * 2. Clima nas quatro pracas produtoras. Geada no Sul de Minas e chuva na
- *    florada mexem no preco antes de qualquer relatorio sair.
+ * 2. Clima nas quatro praças produtoras. Geada no Sul de Minas e chuva na
+ *    florada mexem no preço antes de qualquer relatório sair.
  *
- * Fica separado de market-data de proposito: se o CEPEA cair, as cotacoes de
- * bolsa continuam chegando, e vice-versa.
+ * Fica separado de market-data de propósito: se uma fonte cair, a outra
+ * continua chegando.
  *
- * Sobre o CEPEA: o site responde 403 a requisicao vinda do datacenter onde as
- * Functions rodam, mesmo com cabecalhos de navegador. Do Brasil o widget abre
- * normalmente. Por isso existem dois caminhos: a tentativa automatica, que
- * funciona quando o bloqueio nao se aplica, e o valor informado pela mesa e
- * guardado no banco. Cada indicador declara de onde veio.
+ * O último valor de cada indicador é gravado a cada coleta. Quando a fonte não
+ * responde, a leitura anterior entra no lugar, sempre rotulada com a data de
+ * referência e a idade em dias.
  */
 
-const { json, preflight, timeoutFetch, retryFetch, hasSupabase, supabase } = require('./_utils');
+const { json, preflight, timeoutFetch, hasSupabase, supabase } = require('./_utils');
+const { collect: collectIndicators } = require('./_indicators');
 
 const CACHE_MS = 30 * 60 * 1000;
 let cache = { at: 0, payload: null };
-
-/* ------------------------------------------------------- CEPEA / ESALQ */
-
-const CEPEA_WIDGET = 'https://www.cepea.org.br/br/widgetproduto.js.php'
-  + '?fonte=arial&tamanho=10&largura=400px&id_indicador[]=';
-
-/**
- * O site do CEPEA responde 403 a requisicao que nao pareca navegador, o que
- * derrubava a coleta a partir do datacenter mesmo funcionando de uma maquina
- * comum. O widget e publico e embutivel; estes cabecalhos apenas reproduzem o
- * que um navegador enviaria ao carregar esse mesmo script em uma pagina.
- */
-const CEPEA_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-    + '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-  Accept: '*/*',
-  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
-  Referer: 'https://www.cepea.org.br/br/indicador/cafe.aspx',
-  'Sec-Fetch-Dest': 'script',
-  'Sec-Fetch-Mode': 'no-cors',
-  'Sec-Fetch-Site': 'same-origin'
-};
-
-const INDICATORS = [
-  { id: 23, key: 'arabica', name: 'Cafe arabica', unit: 'BRL/saca 60kg', highlight: true },
-  { id: 24, key: 'robusta', name: 'Cafe robusta', unit: 'BRL/saca 60kg', highlight: true },
-  { id: 53, key: 'sugar', name: 'Acucar cristal SP', unit: 'BRL/saca 50kg', highlight: false },
-  { id: 2, key: 'cattle', name: 'Boi gordo', unit: 'BRL/arroba', highlight: false }
-];
-
-/** "1.659,93" no formato brasileiro vira 1659.93. */
-const parseBrNumber = value => {
-  const clean = String(value || '').replace(/\./g, '').replace(',', '.');
-  const number = Number(clean);
-  return Number.isFinite(number) ? number : null;
-};
-
-const parseIsoDate = value => {
-  const match = String(value || '').match(/(\d{2})\/(\d{2})\/(\d{4})/);
-  if (!match) return null;
-  return match[3] + '-' + match[2] + '-' + match[1];
-};
-
-const fetchIndicator = async indicator => {
-  try {
-    // O indicador de arabica e o numero central do produto, entao vale mais
-    // uma tentativa nele do que nos demais.
-    const attempts = indicator.highlight ? 3 : 2;
-    const response = await retryFetch(CEPEA_WIDGET + indicator.id, {
-      headers: CEPEA_HEADERS,
-      redirect: 'follow'
-    }, 8000, attempts);
-
-    const raw = (await response.text()).replace(/\\n/g, ' ').replace(/\\t/g, ' ');
-    const body = (raw.match(/<tbody>[\s\S]*?<\/tbody>/i) || [''])[0];
-    const spans = Array.from(body.matchAll(/<span class="maior">([^<]+)<\/span>/g), match => match[1].trim());
-    if (spans.length < 2) throw new Error('Widget sem linha de valor');
-
-    const value = parseBrNumber(spans[spans.length - 1]);
-    if (value === null) throw new Error('Valor nao numerico');
-
-    return {
-      key: indicator.key,
-      name: indicator.name,
-      label: spans[0],
-      value,
-      unit: indicator.unit,
-      highlight: indicator.highlight,
-      referenceDate: parseIsoDate(body),
-      source: 'CEPEA/ESALQ',
-      status: 'available'
-    };
-  } catch (error) {
-    return {
-      key: indicator.key,
-      name: indicator.name,
-      value: null,
-      unit: indicator.unit,
-      highlight: indicator.highlight,
-      referenceDate: null,
-      source: 'CEPEA/ESALQ',
-      status: 'unavailable',
-      error: 'Indicador indisponivel: ' + error.message
-    };
-  }
-};
 
 /* ------------------------------------------------------------- clima */
 
 const REGIONS = [
   { key: 'sul-minas', name: 'Sul de Minas', city: 'Varginha', crop: 'Arabica', lat: -21.55, lon: -45.43 },
-  { key: 'cerrado', name: 'Cerrado Mineiro', city: 'Patrocinio', crop: 'Arabica', lat: -18.94, lon: -46.99 },
+  { key: 'cerrado', name: 'Cerrado Mineiro', city: 'Patrocínio', crop: 'Arabica', lat: -18.94, lon: -46.99 },
   { key: 'mogiana', name: 'Mogiana', city: 'Franca', crop: 'Arabica', lat: -20.54, lon: -47.40 },
-  { key: 'espirito-santo', name: 'Espirito Santo', city: 'Linhares', crop: 'Conilon', lat: -19.39, lon: -40.07 }
+  { key: 'espirito-santo', name: 'Espírito Santo', city: 'Linhares', crop: 'Conilon', lat: -19.39, lon: -40.07 }
 ];
 
 const sum = values => values.reduce((total, value) => total + (Number(value) || 0), 0);
 
 /**
- * Geada e o risco que mais move o preco do arabica. Abaixo de 4 graus ja ha
+ * Geada e o risco que mais move o preco do arabica. Abaixo de 4 graus já há
  * risco em cultivo baixo; abaixo de 2, risco severo. O limiar e declarado na
- * resposta para a interface nao precisar adivinhar.
+ * resposta para a interface não precisar adivinhar.
  */
+const FROST_LABEL = {
+  none: 'sem risco',
+  watch: 'observar',
+  alert: 'atenção',
+  severe: 'risco severo',
+  unknown: 'sem leitura'
+};
+
 const frostRisk = minimum => {
-  if (minimum === null) return 'desconhecido';
-  if (minimum <= 2) return 'severo';
-  if (minimum <= 4) return 'atencao';
-  if (minimum <= 7) return 'observar';
-  return 'sem risco';
+  if (minimum === null) return 'unknown';
+  if (minimum <= 2) return 'severe';
+  if (minimum <= 4) return 'alert';
+  if (minimum <= 7) return 'watch';
+  return 'none';
 };
 
 const fetchWeather = async () => {
@@ -153,7 +75,7 @@ const fetchWeather = async () => {
   return REGIONS.map((region, index) => {
     const daily = locations[index] && locations[index].daily;
     if (!daily) {
-      return Object.assign({}, region, { status: 'unavailable', error: 'Sem retorno para a praca.' });
+      return Object.assign({}, region, { status: 'unavailable', error: 'Sem retorno para a praça.' });
     }
 
     // past_days=7 coloca os sete primeiros dias no passado e o resto a frente.
@@ -178,13 +100,13 @@ const fetchWeather = async () => {
   });
 };
 
-/* -------------------------------------------- ultimo valor conhecido */
+/* -------------------------------------------- último valor conhecido */
 
 const storedIndicators = async () => {
   if (!hasSupabase()) return new Map();
   try {
     const rows = await supabase('physical_indicators', {
-      query: { select: 'key,name,value,unit,reference_date,source,origin,updated_at' }
+      query: { select: 'key,name,value,unit,reference_date,source,origin,change_percent,updated_at' }
     });
     return new Map((rows || []).map(row => [row.key, row]));
   } catch {
@@ -192,7 +114,7 @@ const storedIndicators = async () => {
   }
 };
 
-/** Guarda o que a coleta automatica conseguiu, para servir de reserva depois. */
+/** Guarda o que a coleta automática conseguiu, para servir de reserva depois. */
 const persistIndicator = async item => {
   if (!hasSupabase() || item.status !== 'available' || !item.referenceDate) return;
   try {
@@ -205,7 +127,8 @@ const persistIndicator = async item => {
         unit: item.unit,
         reference_date: item.referenceDate,
         source: item.source,
-        origin: 'automatica',
+        change_percent: item.changePercent,
+        origin: 'auto',
         updated_at: new Date().toISOString()
       },
       prefer: 'resolution=merge-duplicates,return=minimal'
@@ -215,7 +138,7 @@ const persistIndicator = async item => {
   }
 };
 
-/** Idade do dado em dias, para a interface dizer se ja envelheceu. */
+/** Idade do dado em dias, para a interface dizer se já envelheceu. */
 const ageInDays = referenceDate => {
   if (!referenceDate) return null;
   const reference = new Date(referenceDate + 'T12:00:00-03:00');
@@ -227,18 +150,18 @@ const ageInDays = referenceDate => {
 
 const buildPayload = async () => {
   const [liveResults, weatherResult, stored] = await Promise.all([
-    Promise.all(INDICATORS.map(fetchIndicator)),
+    collectIndicators().catch(() => []),
     fetchWeather().catch(() => null),
     storedIndicators()
   ]);
 
   await Promise.all(liveResults.map(persistIndicator));
 
-  // Quando a coleta automatica falha, entra o ultimo valor conhecido, sempre
-  // rotulado com a data de referencia e a origem.
+  // Quando a coleta automática falha, entra o último valor conhecido, sempre
+  // rotulado com a data de referência e a origem.
   const indicatorResults = liveResults.map(item => {
     if (item.status === 'available') {
-      return Object.assign({}, item, { origin: 'automatica', ageDays: ageInDays(item.referenceDate) });
+      return Object.assign({}, item, { origin: 'auto', ageDays: ageInDays(item.referenceDate) });
     }
 
     const fallback = stored.get(item.key);
@@ -250,8 +173,11 @@ const buildPayload = async () => {
       value: Number(fallback.value),
       unit: fallback.unit || item.unit,
       highlight: item.highlight,
+      changePercent: fallback.change_percent === null || fallback.change_percent === undefined
+        ? null
+        : Number(fallback.change_percent),
       referenceDate: fallback.reference_date,
-      source: fallback.source || 'CEPEA/ESALQ',
+      source: fallback.source || 'Notícias Agrícolas',
       origin: fallback.origin || 'manual',
       ageDays: ageInDays(fallback.reference_date),
       status: 'available',
@@ -264,11 +190,11 @@ const buildPayload = async () => {
 
   return {
     success: available.length > 0 || Boolean(weatherResult),
-    source: 'CEPEA/ESALQ e Open-Meteo',
+    source: 'Indicadores do mercado físico e Open-Meteo',
     status: available.length === indicatorResults.length && weatherResult
       ? 'available'
       : (available.length || weatherResult ? 'partial' : 'unavailable'),
-    error: available.length || weatherResult ? null : 'Nenhuma fonte de mercado fisico respondeu.',
+    error: available.length || weatherResult ? null : 'Nenhuma fonte de mercado físico respondeu.',
     data: {
       indicators: indicatorResults,
       physicalArabica: arabica && arabica.status === 'available' ? arabica : null,
@@ -292,8 +218,8 @@ exports.handler = async event => {
 
   try {
     const payload = await buildPayload();
-    // Cache curto quando nenhum indicador veio: nao vale segurar meia hora um
-    // resultado incompleto so porque o clima respondeu.
+    // Cache curto quando nenhum indicador veio: não vale segurar meia hora um
+    // resultado incompleto só porque o clima respondeu.
     const complete = payload.data.activeIndicators === payload.data.totalIndicators;
     if (payload.success) cache = { at: complete ? now : now - (CACHE_MS - 5 * 60 * 1000), payload };
     return json(payload.success ? 200 : 503, payload, payload.success ? (complete ? 900 : 300) : 0);
@@ -302,12 +228,13 @@ exports.handler = async event => {
     if (cache.payload) return json(200, Object.assign({}, cache.payload, { stale: true }), 120);
     return json(503, {
       success: false,
-      source: 'CEPEA/ESALQ e Open-Meteo',
+      source: 'Indicadores do mercado físico e Open-Meteo',
       status: 'unavailable',
-      error: 'Nenhuma fonte de mercado fisico respondeu.',
+      error: 'Nenhuma fonte de mercado físico respondeu.',
       data: { indicators: [], physicalArabica: null, weather: [], weatherAvailable: false }
     }, 0);
   }
 };
 
 exports.REGIONS = REGIONS;
+exports.FROST_LABEL = FROST_LABEL;

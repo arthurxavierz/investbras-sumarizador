@@ -48,11 +48,11 @@ exports.handler = async event => {
   const token = String(params.token || '');
 
   if (!email || !token || token !== tokenFor(email)) {
-    return html(400, page('Link invalido', 'Este link de descadastro nao confere. Responda a ultima edicao recebida e a mesa remove o endereco manualmente.', 'error'));
+    return html(400, page('Link inválido', 'Este link de descadastro não confere. Responda a última edição recebida e a mesa remove o endereço manualmente.', 'error'));
   }
 
   if (!hasSupabase()) {
-    return html(503, page('Cadastro indisponivel', 'A base de inscritos nao esta conectada neste ambiente. Nenhuma alteracao foi feita.', 'error'));
+    return html(503, page('Cadastro indisponível', 'A base de inscritos não esta conectada neste ambiente. Nenhuma alteracao foi feita.', 'error'));
   }
 
   try {
@@ -63,10 +63,10 @@ exports.handler = async event => {
       prefer: 'return=minimal'
     });
     await log('info', 'subscribe', 'Descadastro concluido', { email });
-    return html(200, page('Descadastro concluido', 'O endereco <strong>' + email + '</strong> nao recebe mais o giro diario da Investbras.', 'ok'));
+    return html(200, page('Descadastro concluido', 'O endereço <strong>' + email + '</strong> não recebe mais o giro diário da Investbras.', 'ok'));
   } catch (error) {
     console.error('unsubscribe', error);
-    return html(502, page('Nao foi possivel concluir', 'A base nao respondeu agora. Tente novamente em alguns minutos.', 'error'));
+    return html(502, page('Não foi possível concluir', 'A base não respondeu agora. Tente novamente em alguns minutos.', 'error'));
   }
 };
 

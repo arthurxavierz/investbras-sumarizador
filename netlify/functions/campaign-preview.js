@@ -4,9 +4,9 @@
  * Simulador do e-mail. Devolve exatamente o HTML que o inscrito receberia,
  * gerado pelo mesmo modelo do disparo real.
  *
- * A resposta e um documento de topo, aberto em aba propria, e carrega a
- * propria CSP. Assim o e-mail renderiza com seus estilos embutidos sem
- * precisar afrouxar a politica do site.
+ * A resposta e um documento de topo, aberto em aba própria, e carrega a
+ * própria CSP. Assim o e-mail renderiza com seus estilos embutidos sem
+ * precisar afrouxar a política do site.
  */
 
 const { requireMethod, httpError, text, isEmail } = require('./_utils');
@@ -26,15 +26,15 @@ const html = (statusCode, body) => ({
 });
 
 const errorPage = message => `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><title>Previa indisponivel</title></head>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prévia indisponível</title></head>
 <body style="margin:0;padding:40px;background:#0C0B09;color:#F4F0E6;font-family:'Segoe UI',Arial,sans-serif;">
-  <h1 style="font-size:20px;margin:0 0 10px;">Previa indisponivel</h1>
+  <h1 style="font-size:20px;margin:0 0 10px;">Prévia indisponível</h1>
   <p style="color:#9A9389;font-size:14px;margin:0;">${message}</p>
 </body></html>`;
 
 /**
- * A previa abre por submit em aba nova, entao o corpo chega como formulario.
- * O conteudo vai inteiro em um campo unico, ja em JSON.
+ * A prévia abre por submit em aba nova, então o corpo chega como formulario.
+ * O conteúdo vai inteiro em um campo único, já em JSON.
  */
 const readPayload = event => {
   const type = String(
@@ -46,18 +46,18 @@ const readPayload = event => {
       ? Buffer.from(event.body || '', 'base64').toString('utf8')
       : (event.body || '');
     const field = new URLSearchParams(raw).get('payload');
-    if (!field) throw httpError(400, 'Formulario sem conteudo.');
+    if (!field) throw httpError(400, 'Formulario sem conteúdo.');
     try {
       return JSON.parse(field);
     } catch {
-      throw httpError(400, 'Conteudo da previa invalido.');
+      throw httpError(400, 'Conteúdo da prévia inválido.');
     }
   }
 
   try {
     return JSON.parse(event.body || '{}');
   } catch {
-    throw httpError(400, 'JSON invalido.');
+    throw httpError(400, 'JSON inválido.');
   }
 };
 
@@ -66,14 +66,14 @@ exports.handler = async event => {
     requireMethod(event, ['POST']);
     const body = readPayload(event);
 
-    // O token vem no corpo porque a previa abre por submit de formulario em
-    // aba nova, e nesse caminho nao da para enviar cabecalho Authorization.
+    // O token vem no corpo porque a prévia abre por submit de formulario em
+    // aba nova, e nesse caminho não da para enviar cabecalho Authorization.
     const session = verify(body.token);
 
     const email = isEmail(body.email) ? String(body.email).trim().toLowerCase() : session.sub;
 
     const report = {
-      title: text(body.title, { max: 180, field: 'titulo', required: true }),
+      title: text(body.title, { max: 180, field: 'título', required: true }),
       summary: text(body.summary, { max: 1200, field: 'resumo', required: true }),
       sections: body.sections && typeof body.sections === 'object' ? body.sections : {}
     };
@@ -82,8 +82,8 @@ exports.handler = async event => {
   } catch (error) {
     const status = error && error.statusCode ? error.statusCode : 500;
     const message = status === 401
-      ? 'Sessao invalida ou expirada. Entre novamente no painel e repita a previa.'
-      : (error.message || 'Nao foi possivel montar a previa.');
+      ? 'Sessão inválida ou expirada. Entre novamente no painel e repita a prévia.'
+      : (error.message || 'Não foi possível montar a prévia.');
     return html(status, errorPage(message));
   }
 };

@@ -8,7 +8,7 @@ const SESSION_HOURS = 12;
 const secret = () => {
   const value = process.env.SESSION_SECRET || '';
   if (value.length < 24) {
-    throw httpError(503, 'Area administrativa sem SESSION_SECRET configurado no ambiente.');
+    throw httpError(503, 'Área administrativa sem SESSION_SECRET configurado no ambiente.');
   }
   return value;
 };
@@ -24,22 +24,22 @@ const sign = payload => {
 
 const verify = token => {
   const [body, mac] = String(token || '').split('.');
-  if (!body || !mac) throw httpError(401, 'Sessao invalida.');
+  if (!body || !mac) throw httpError(401, 'Sessão inválida.');
 
   const expected = crypto.createHmac('sha256', secret()).update(body).digest('base64url');
   const a = Buffer.from(mac);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    throw httpError(401, 'Sessao invalida.');
+    throw httpError(401, 'Sessão inválida.');
   }
 
   let payload;
   try {
     payload = JSON.parse(fromB64url(body));
   } catch {
-    throw httpError(401, 'Sessao invalida.');
+    throw httpError(401, 'Sessão inválida.');
   }
-  if (!payload?.exp || Date.now() > payload.exp) throw httpError(401, 'Sessao expirada. Entre novamente.');
+  if (!payload?.exp || Date.now() > payload.exp) throw httpError(401, 'Sessão expirada. Entre novamente.');
   return payload;
 };
 
@@ -60,7 +60,7 @@ const bearer = event => {
 /** Usado por toda Function administrativa antes de qualquer efeito colateral. */
 const requireSession = event => {
   const token = bearer(event);
-  if (!token) throw httpError(401, 'Autenticacao necessaria.');
+  if (!token) throw httpError(401, 'Autenticação necessária.');
   return verify(token);
 };
 
@@ -76,7 +76,7 @@ const supabaseAuthConfigured = () => Boolean(
   && (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY)
 );
 
-/** Login por Supabase Auth quando o projeto ja tem usuarios cadastrados. */
+/** Login por Supabase Auth quando o projeto já tem usuários cadastrados. */
 const supabaseLogin = async (email, password) => {
   const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
   const anon = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -98,7 +98,7 @@ const supabaseLogin = async (email, password) => {
   };
 };
 
-/** Fallback de operador unico, util antes do Supabase Auth estar populado. */
+/** Fallback de operador único, util antes do Supabase Auth estar populado. */
 const envLogin = (email, password) => {
   const expectedEmail = process.env.ADMIN_EMAIL || '';
   const expectedPassword = process.env.ADMIN_PASSWORD || '';

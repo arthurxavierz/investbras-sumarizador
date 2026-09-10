@@ -18,8 +18,8 @@ Basta subir o site. Estes blocos usam fontes publicas e nao dependem de chave:
 | Acucar, petroleo WTI, ouro, soja, milho | ICE, NYMEX, COMEX e CBOT via Yahoo Finance |
 | Dolar PTAX | Banco Central do Brasil (Olinda) |
 | Selic meta e IPCA do mes | Banco Central do Brasil (SGS) |
-| Cafe arabica e robusta no fisico | Indicadores CEPEA/ESALQ, ver a nota abaixo |
-| Acucar cristal SP e boi gordo | Indicadores CEPEA/ESALQ, ver a nota abaixo |
+| Cafe arabica e robusta no fisico | Indicadores Esalq/B3 via Notícias Agrícolas |
+| Soja, boi gordo e milho no fisico | Indicadores Esalq/B3 via Notícias Agrícolas |
 | Clima nas pracas produtoras | Open-Meteo, sem chave |
 | Agenda economica | Calendario oficial de divulgacoes do IBGE |
 | Noticias | Canal Rural, InfoMoney, Money Times, Agrolink, G1 agro, G1 mundo, Agencia Brasil e quatro buscas tematicas |
@@ -41,23 +41,28 @@ O CEPEA entra como o outro lado da conta: quanto a saca vale de fato no Brasil.
 A diferenca entre os dois numeros e o que a mesa negocia, e ela so aparece quando
 as duas leituras chegam na mesma consulta.
 
-### O caso do CEPEA
+### O caso do preço físico
 
-O CEPEA responde **403 a requisicao vinda do datacenter** onde as Functions
-rodam. Nao e o User-Agent: de um IP brasileiro tanto o UA da aplicacao quanto o
-de navegador retornam 200; de us-east-1 os quatro indicadores caem. E bloqueio
-por IP, e cabecalho nenhum contorna.
+A primeira versão lia o widget do CEPEA direto. Ele funciona de um IP
+brasileiro e responde **403 do datacenter** onde as Functions rodam, o que
+derrubava a coleta em produção sem aviso. Não era o User-Agent: de um IP no
+Brasil os dois cabeçalhos retornam 200. É bloqueio por faixa de IP, e nenhum
+cabeçalho contorna.
 
-Como a mesa consulta o indicador diariamente de qualquer forma, o caminho e
-duplo:
+A leitura passou a vir das páginas de cotação do Notícias Agrícolas, que
+respondem normalmente do datacenter e publicam cinco indicadores com data e
+variação do dia: café arábica, café robusta, soja, boi gordo e milho. Quem
+apura cada indicador continua declarado, porque o rótulo vem capturado da
+própria página.
 
-1. A coleta automatica continua tentando. Quando funciona, o valor e gravado.
-2. O painel tem um formulario em **Mercado fisico** para registrar o numero na
-   mao, com data de referencia.
+O parser se ancora no **título imediatamente antes da tabela**, não na posição
+dela. Se o portal inserir um bloco novo no meio da página, a leitura continua
+achando o indicador certo em vez de trocar de tabela em silêncio. Cada
+indicador também declara a faixa de valor plausível: fora dela, vira
+indisponível em vez de publicar o número de outro produto.
 
-A leitura sempre declara de onde veio e quanto tempo tem. Acima de um dia a
-pagina publica avisa a idade; acima de tres, o painel marca em vermelho. Um
-indicador de terca nao pode passar por cotacao de hoje.
+Não há entrada manual. O último valor de cada indicador fica gravado e entra
+como reserva quando a fonte não responde, sempre rotulado com a idade em dias.
 
 ### Clima nas pracas produtoras
 
@@ -178,7 +183,9 @@ Rode as migracoes na ordem, no SQL Editor:
    coleta de noticias precisa, os campos de cadastro manual de inscrito e a
    funcao de limpeza `purge_old_news`.
 3. `supabase/migrations/0003_physical_indicators.sql` cria a tabela do mercado
-   fisico, onde fica o ultimo valor conhecido de cada indicador.
+   físico, onde fica o último valor conhecido de cada indicador.
+4. `supabase/migrations/0004_subscriber_phone.sql` adiciona o telefone do
+   inscrito, que é opcional.
 
 A unica policy permissiva libera leitura de `market_reports` com `status = 'published'`.
 Todo o resto so e acessivel pela service role, que vive apenas nas Functions.
@@ -212,13 +219,27 @@ esse e-mail. O login tenta o Supabase primeiro e cai para `ADMIN_EMAIL` como res
 6. **Enviar teste para mim** antes de **Disparar para a base**. O disparo real
    pede confirmacao.
 
-O bloco **Mercado fisico** mostra os quatro indicadores com a origem de cada um
-e recebe o registro manual quando a coleta automatica nao passa.
+O bloco **Mercado físico** mostra os cinco indicadores com origem, data de
+referência e idade de cada um.
 
-O bloco **Card do dia** gera o JPG consolidado em post ou story.
+O bloco **Card do dia** gera o JPG consolidado, em story 1080 x 1920 por padrão
+ou post 1920 x 1080. A tipografia do card é diferente da do site de propósito:
+a página é leitura contínua, o card é peça de circulação vista por segundos.
 
-O bloco **Inscritos** cadastra endereco na mao, busca por e-mail, nome ou
+O bloco **Inscritos** cadastra contato na mão (e-mail e nome obrigatórios,
+telefone e empresa opcionais), importa base em CSV, busca por e-mail, nome ou
 empresa, filtra por status e permite desativar, reativar ou remover.
+
+### Importar base em CSV
+
+O leitor reconhece vírgula, ponto e vírgula, tabulação e barra vertical, com ou
+sem aspas, com BOM e com quebra de linha do Windows. As colunas são mapeadas
+pelo cabeçalho em qualquer ordem: e-mail, nome, telefone e empresa, incluindo
+variações como "celular", "razão social" e "responsável". Sem cabeçalho
+reconhecível, ele deduz as colunas pelo conteúdo das células.
+
+Contato sem e-mail válido, sem nome ou repetido no arquivo é ignorado e listado
+no relatório da importação. O limite é de 2000 linhas por arquivo.
 
 A regra do prompt de IA e explicita: interpretar apenas os dados recebidos, nunca criar
 cotacao, percentual, data ou evento, e declarar quando uma fonte nao respondeu. Ainda assim,
@@ -250,8 +271,8 @@ investbras-market-static/
     _email.js           modelo do e-mail, usado por disparo e simulador
     auth-login.js  auth-me.js
     market-data.js  market-news.js  market-agenda.js  news-image.js
-    market-physical.js  indicadores CEPEA e clima das pracas produtoras
-    physical-save.js    registro manual do indicador fisico pela mesa
+    market-physical.js  indicadores do fisico e clima das pracas produtoras
+    _indicators.js      coleta e validacao dos indicadores de preco
     cron-news.js        coleta agendada a cada 20 minutos
     generate-report.js  report.js  report-save.js
     subscribe.js  unsubscribe.js  subscribers.js
@@ -261,6 +282,7 @@ investbras-market-static/
     0001_investbras_market.sql
     0002_news_and_subscribers.sql
     0003_physical_indicators.sql
+    0004_subscriber_phone.sql
 ```
 
 ## Notas de operacao
@@ -277,9 +299,8 @@ investbras-market-static/
   do proprio Google. Por isso a coleta nao tenta buscar capa nesses itens, e usa
   o `<source url>` do RSS para identificar o veiculo real e montar a miniatura
   de marca. Os portais diretos entregam foto e texto proprios.
-- **CEPEA.** Ver a secao "O caso do CEPEA" acima. O widget e publico, mas o
-  bloqueio por IP faz a coleta automatica falhar em producao. O registro manual
-  no painel e o caminho confiavel, e leva menos de dez segundos por dia.
+- **Preço físico.** Ver "O caso do preço físico" acima. A leitura é automática
+  e o painel só mostra o resultado, sem digitação.
 - **PTAX em feriado.** O Banco Central so publica em dia util. A busca anda para
   tras dia a dia, e agora tem prazo proprio de 7 segundos: sem esse teto um
   feriado prolongado podia somar 48 segundos e estourar o limite da Function.

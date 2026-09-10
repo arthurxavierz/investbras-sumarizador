@@ -2,7 +2,7 @@
 
 body.admin { background: var(--bg-inset); }
 
-/* Segunda barreira: as tres telas nunca coexistem, mesmo se o atributo hidden
+/* Segunda barreira: as três telas nunca coexistem, mesmo se o atributo hidden
    falhar por qualquer motivo. */
 body[data-view="loading"] #gate,
 body[data-view="loading"] #console,
@@ -11,7 +11,7 @@ body[data-view="gate"] #booting,
 body[data-view="console"] #gate,
 body[data-view="console"] #booting { display: none !important; }
 
-/* Verificacao de sessao --------------------------------------------------- */
+/* Verificacao de sessão --------------------------------------------------- */
 
 .booting {
   min-height: 100dvh;
@@ -261,7 +261,7 @@ body[data-view="console"] #booting { display: none !important; }
 .status-pill[data-state="published"] { border-color: var(--up); color: var(--up); }
 .status-pill[data-state="draft"] { border-color: var(--gold-dim); color: var(--gold); }
 
-/* Producao do dia ---------------------------------------------------------- */
+/* Produção do dia ---------------------------------------------------------- */
 
 .production {
   display: grid;
@@ -400,13 +400,13 @@ body[data-view="console"] #booting { display: none !important; }
 .check strong { display: block; font-size: 13px; font-weight: 500; }
 .check small { display: block; font-size: 11.5px; color: var(--txt-dim); line-height: 1.5; margin-top: 2px; }
 
-/* Previa ------------------------------------------------------------------ */
+/* Prévia ------------------------------------------------------------------ */
 
 .preview { display: grid; gap: 8px; }
 .preview h3 { font-size: 18px; }
 .preview p { font-size: 13px; color: var(--txt-muted); line-height: 1.6; }
 
-/* Mercado fisico ----------------------------------------------------------- */
+/* Mercado físico ----------------------------------------------------------- */
 
 .panel-note {
   font-size: 13px;
@@ -440,7 +440,7 @@ body[data-view="console"] #booting { display: none !important; }
   white-space: nowrap;
 }
 
-.origin-tag[data-origin="automatica"] { border-color: var(--up); color: var(--up); }
+.origin-tag[data-origin="auto"] { border-color: var(--up); color: var(--up); }
 .origin-tag[data-origin="manual"] { border-color: var(--gold-dim); color: var(--gold); }
 .origin-tag[data-age="velho"] { border-color: var(--down); color: var(--down); }
 
@@ -508,12 +508,54 @@ body[data-view="console"] #booting { display: none !important; }
 
 .subs-add {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, 1fr) auto;
   gap: 12px;
   align-items: end;
   padding-bottom: 18px;
-  border-bottom: 1px solid var(--line-soft);
 }
+
+.subs-import {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r);
+}
+
+.subs-import strong { display: block; font-size: 13.5px; margin-bottom: 5px; }
+.subs-import p { font-size: 12.5px; color: var(--txt-dim); line-height: 1.55; max-width: 68ch; }
+
+.file-button {
+  position: relative;
+  overflow: hidden;
+  padding: 11px 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  font-size: 13px;
+  color: var(--txt);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .18s var(--ease);
+}
+
+.file-button:hover { border-color: var(--gold); }
+.file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.import-report {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--bg-inset);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.import-report strong { display: block; margin-bottom: 6px; }
+.import-report ul { margin: 8px 0 0; padding-left: 18px; color: var(--txt-dim); }
+.import-report li { margin-bottom: 3px; }
 
 .subs-filters {
   display: grid;
@@ -605,6 +647,7 @@ body[data-view="console"] #booting { display: none !important; }
   .physical-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .physical-form .button { grid-column: 1 / -1; }
   .subs-add { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .subs-import { grid-template-columns: minmax(0, 1fr); }
   .subs-add .button { grid-column: 1 / -1; }
   .subs-row { grid-template-columns: minmax(0, 1fr) 96px auto; }
   .subs-row .org { display: none; }

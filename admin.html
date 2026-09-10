@@ -10,18 +10,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Tipografia exclusiva do card, carregada para o canvas poder desenhar com ela. -->
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/admin.css">
 </head>
 <body class="admin" data-view="loading">
   <div class="booting" id="booting">
     <span class="booting-mark" aria-hidden="true">IB</span>
-    <p>Verificando sessao</p>
+    <p>Verificando sessão</p>
   </div>
 
   <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-  <!-- Portao de acesso. O painel so fica visivel depois da sessao. -->
+  <!-- Portao de acesso. O painel só fica visivel depois da sessão. -->
   <div class="gate" id="gate" hidden>
     <div class="gate-card">
       <a class="brand" href="/">
@@ -30,7 +32,7 @@
       </a>
 
       <h1>Acesso da mesa</h1>
-      <p>Area restrita a equipe editorial. A sessao expira em 12 horas.</p>
+      <p>Área restrita a equipe editorial. A sessão expira em 12 horas.</p>
 
       <form id="login-form" novalidate>
         <div class="field">
@@ -47,7 +49,7 @@
 
       <div class="gate-status" id="gate-status" hidden></div>
 
-      <a class="gate-back" href="/">Voltar para a area publica</a>
+      <a class="gate-back" href="/">Voltar para a área pública</a>
     </div>
   </div>
 
@@ -58,13 +60,13 @@
         <span class="brand-name"><strong>INVESTBRAS</strong><small>INTELLIGENCE</small></span>
       </a>
 
-      <nav aria-label="Secoes do painel">
-        <a href="#pipeline">Producao</a>
+      <nav aria-label="Seções do painel">
+        <a href="#pipeline">Produção</a>
         <a href="#editor">Editor</a>
-        <a href="#fisico">Mercado fisico</a>
+        <a href="#fisico">Mercado físico</a>
         <a href="#card">Card</a>
         <a href="#inscritos">Inscritos</a>
-        <a href="#distribuicao">Distribuicao</a>
+        <a href="#distribuicao">Distribuição</a>
         <a href="#saude">Infraestrutura</a>
       </nav>
 
@@ -73,41 +75,41 @@
           <span class="operator-avatar" id="operator-initial" aria-hidden="true">--</span>
           <div>
             <strong id="operator-name">Operador</strong>
-            <small id="operator-email">sessao ativa</small>
+            <small id="operator-email">sessão ativa</small>
           </div>
         </div>
-        <button class="ghost-button" id="logout" type="button">Encerrar sessao</button>
-        <a class="ghost-button" href="/" target="_blank" rel="noopener">Ver area publica</a>
+        <button class="ghost-button" id="logout" type="button">Encerrar sessão</button>
+        <a class="ghost-button" href="/" target="_blank" rel="noopener">Ver área pública</a>
       </div>
     </aside>
 
     <main class="workspace">
       <header class="workspace-top">
         <div>
-          <p class="eyebrow">Mesa de publicacao <span id="admin-date"></span></p>
+          <p class="eyebrow">Mesa de publicação <span id="admin-date"></span></p>
           <h1 id="workspace-title" tabindex="-1">Giro do dia</h1>
         </div>
         <div class="top-actions">
-          <span class="status-pill" id="edition-state">Rascunho local</span>
+          <span class="status-pill" id="edition-state">Não publicada</span>
         </div>
       </header>
 
       <section class="production" id="pipeline">
         <div class="production-copy">
-          <h2>Passo 1: atualizar informacoes</h2>
+          <h2>Passo 1: atualizar informações</h2>
           <p>
-            Forca a releitura de cotacoes, noticias e agenda ignorando o cache, e monta o texto no
-            editor abaixo. A area publica ja se atualiza sozinha: este botao serve para trazer tudo
-            agora e comecar a edicao. Nada e publicado aqui.
+            Forca a releitura de cotações, notícias e agenda ignorando o cache, e monta o texto no
+            editor abaixo. A área pública já se atualiza sozinha: este botão serve para trazer tudo
+            agora e começar a edição. Nada e publicado aqui.
           </p>
-          <p class="production-status" id="generation-note">Nenhuma atualizacao executada nesta sessao.</p>
+          <p class="production-status" id="generation-note">Nenhuma atualização executada nesta sessão.</p>
         </div>
-        <button class="button button-accent production-action" id="generate" type="button">Atualizar informacoes</button>
+        <button class="button button-accent production-action" id="generate" type="button">Atualizar informações</button>
       </section>
 
-      <section class="metrics" aria-label="Indicadores da operacao">
-        <article><span class="label">Status da edicao</span><strong id="metric-status">--</strong><small id="metric-status-detail">Verificando</small></article>
-        <article><span class="label">Cotacoes ativas</span><strong id="metric-assets">--</strong><small>Fontes de mercado</small></article>
+      <section class="metrics" aria-label="Indicadores da operação">
+        <article><span class="label">Status da edição</span><strong id="metric-status">--</strong><small id="metric-status-detail">Verificando</small></article>
+        <article><span class="label">Cotações ativas</span><strong id="metric-assets">--</strong><small>Fontes de mercado</small></article>
         <article><span class="label">Materias</span><strong id="metric-news">--</strong><small>No feed do dia</small></article>
         <article><span class="label">Inscritos ativos</span><strong id="metric-subs">--</strong><small id="metric-subs-detail">Base de e-mail</small></article>
       </section>
@@ -115,33 +117,33 @@
       <div class="panel-grid">
         <section class="panel" id="editor">
           <header class="panel-head">
-            <h2>Editor da edicao</h2>
+            <h2>Editor da edição</h2>
             <span class="section-meta" id="autosave-state">Sem alteracoes</span>
           </header>
 
           <form id="report-form" class="report-form">
             <div class="field">
-              <label for="f-title">Titulo</label>
+              <label for="f-title">Título</label>
               <input id="f-title" name="title" value="Giro do mercado Investbras" maxlength="180" required>
             </div>
 
             <div class="field">
-              <label for="f-summary">Resumo <span class="hint">abre a edicao na area publica</span></label>
-              <textarea id="f-summary" name="summary" rows="3" maxlength="1200" required placeholder="O contexto principal do dia em duas ou tres frases."></textarea>
+              <label for="f-summary">Resumo <span class="hint">abre a edição na área pública</span></label>
+              <textarea id="f-summary" name="summary" rows="3" maxlength="1200" required placeholder="O contexto principal do dia em duas ou três frases."></textarea>
             </div>
 
             <div class="field-grid">
               <div class="field">
-                <label for="f-coffee">Cafe</label>
-                <textarea id="f-coffee" name="coffee" rows="6" placeholder="Contrato, cambio, clima, oferta e demanda."></textarea>
+                <label for="f-coffee">Café</label>
+                <textarea id="f-coffee" name="coffee" rows="6" placeholder="Contrato, câmbio, clima, oferta e demanda."></textarea>
               </div>
               <div class="field">
                 <label for="f-weather">Lavoura e clima</label>
-                <textarea id="f-weather" name="weather" rows="6" placeholder="Chuva, geada e estagio da safra nas pracas produtoras."></textarea>
+                <textarea id="f-weather" name="weather" rows="6" placeholder="Chuva, geada e estagio da safra nas praças produtoras."></textarea>
               </div>
               <div class="field">
                 <label for="f-brazil">Brasil</label>
-                <textarea id="f-brazil" name="brazil" rows="6" placeholder="Cambio, bolsa, juros, fiscal e fluxo."></textarea>
+                <textarea id="f-brazil" name="brazil" rows="6" placeholder="Câmbio, bolsa, juros, fiscal e fluxo."></textarea>
               </div>
               <div class="field">
                 <label for="f-global">Exterior</label>
@@ -149,10 +151,10 @@
               </div>
               <div class="field">
                 <label for="f-commodities">Commodities</label>
-                <textarea id="f-commodities" name="commodities" rows="6" placeholder="Acucar, petroleo, ouro, soja e milho."></textarea>
+                <textarea id="f-commodities" name="commodities" rows="6" placeholder="Açúcar, petróleo, ouro, soja e milho."></textarea>
               </div>
               <div class="field">
-                <label for="f-geopolitics">Geopolitica e cadeia</label>
+                <label for="f-geopolitics">Geopolítica e cadeia</label>
                 <textarea id="f-geopolitics" name="geopolitics" rows="6" placeholder="Energia, fretes, fertilizantes e eventos relevantes."></textarea>
               </div>
               <div class="field">
@@ -162,15 +164,15 @@
             </div>
 
             <div class="field">
-              <label for="f-notes">Observacoes internas <span class="hint">nao vai para a area publica</span></label>
+              <label for="f-notes">Observações internas <span class="hint">não vai para a área pública</span></label>
               <textarea id="f-notes" name="notes" rows="3" placeholder="Pontos de checagem antes de publicar."></textarea>
             </div>
 
             <div class="form-actions">
-              <button class="button button-quiet" id="save-draft" type="button">Salvar rascunho</button>
+              <button class="button button-quiet" id="save-draft" type="button">Salvar edição</button>
               <button class="button button-quiet" id="copy-report" type="button">Copiar texto</button>
               <button class="button button-danger" id="unpublish" type="button">Despublicar</button>
-              <button class="button button-accent" id="publish" type="button">Publicar edicao</button>
+              <button class="button button-accent" id="publish" type="button">Publicar edição</button>
             </div>
             <small class="form-feedback" id="editor-feedback" role="status"></small>
           </form>
@@ -187,11 +189,11 @@
 
           <section class="panel">
             <header class="panel-head">
-              <h2>Previa publica</h2>
+              <h2>Prévia pública</h2>
             </header>
             <article class="preview" id="preview">
-              <span class="label">Sem conteudo</span>
-              <p>Preencha o editor ou gere um rascunho para ver a previa.</p>
+              <span class="label">Sem conteúdo</span>
+              <p>Preencha o editor ou atualize as informações para ver a prévia.</p>
             </article>
           </section>
         </aside>
@@ -199,69 +201,45 @@
 
       <section class="panel" id="fisico">
         <header class="panel-head">
-          <h2>Mercado fisico</h2>
+          <h2>Mercado físico</h2>
           <span class="section-meta" id="physical-origin">Verificando coleta</span>
         </header>
 
-        <p class="panel-note" id="physical-note">
-          O site do CEPEA recusa requisicao vinda do servidor onde as Functions rodam, entao a
-          coleta automatica pode falhar mesmo com o widget abrindo normalmente no seu navegador.
-          Informe o indicador aqui e ele passa a valer na pagina publica, no rascunho, no card e
-          no e-mail, sempre com a data de referencia declarada.
+        <p class="panel-note">
+          Indicadores de preço do mercado físico brasileiro, coletados automaticamente a cada
+          leitura e usados na página pública, na edição, no card e no e-mail. Quando a fonte não
+          responde, a última leitura entra no lugar com a idade declarada.
         </p>
 
         <div class="physical-list" id="physical-list"></div>
 
-        <form class="physical-form" id="physical-form">
-          <div class="field">
-            <label for="physical-key">Indicador</label>
-            <select id="physical-key">
-              <option value="arabica">Cafe arabica (saca 60 kg)</option>
-              <option value="robusta">Cafe robusta (saca 60 kg)</option>
-              <option value="sugar">Acucar cristal SP (saca 50 kg)</option>
-              <option value="cattle">Boi gordo (arroba)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="physical-value">Valor em reais</label>
-            <input id="physical-value" type="text" inputmode="decimal" placeholder="1659,93" required>
-          </div>
-          <div class="field">
-            <label for="physical-date">Data de referencia</label>
-            <input id="physical-date" type="date">
-          </div>
-          <button class="button button-accent" type="submit" id="physical-save">Registrar</button>
-        </form>
-
-        <small class="form-feedback" id="physical-feedback" role="status"></small>
-        <a class="ghost-button small" href="https://www.cepea.org.br/br/indicador/cafe.aspx" target="_blank" rel="noopener">Abrir o indicador no CEPEA</a>
       </section>
 
       <section class="panel" id="card">
         <header class="panel-head">
           <h2>Card do dia</h2>
-          <span class="section-meta" id="card-meta">Consolida cotacao, fisico e clima</span>
+          <span class="section-meta" id="card-meta">Consolida cotação, físico e clima</span>
         </header>
 
         <div class="card-tools">
           <div class="field">
             <label for="card-format">Formato</label>
             <select id="card-format">
-              <option value="landscape">Post 1920 x 1080</option>
               <option value="portrait">Story 1080 x 1920</option>
+              <option value="landscape">Post 1920 x 1080</option>
             </select>
           </div>
-          <button class="button button-quiet" id="card-render" type="button">Gerar previa</button>
+          <button class="button button-quiet" id="card-render" type="button">Gerar prévia</button>
           <a class="button button-accent" id="card-download" download>Baixar JPG</a>
         </div>
 
         <small class="form-feedback" id="card-feedback" role="status"></small>
 
         <div class="card-stage" id="card-stage">
-          <canvas id="card-canvas" aria-label="Previa do card de mercado"></canvas>
+          <canvas id="card-canvas" aria-label="Prévia do card de mercado"></canvas>
           <p class="card-hint" id="card-hint">
-            O card usa o titulo e o resumo do editor, mais as cotacoes, o preco fisico
-            e o clima do momento. Gere a previa para conferir antes de baixar.
+            O card usa o título e o resumo do editor, mais as cotações, o preco físico
+            e o clima do momento. Gere a prévia para conferir antes de baixar.
           </p>
         </div>
       </section>
@@ -274,19 +252,40 @@
 
         <form class="subs-add" id="subs-add-form">
           <div class="field">
-            <label for="subs-email">E-mail</label>
+            <label for="subs-email">E-mail <span class="hint">obrigatório</span></label>
             <input id="subs-email" name="email" type="email" autocomplete="off" placeholder="nome@empresa.com.br" required>
           </div>
           <div class="field">
-            <label for="subs-name">Nome</label>
-            <input id="subs-name" name="name" type="text" autocomplete="off" placeholder="Opcional">
+            <label for="subs-name">Nome <span class="hint">obrigatório</span></label>
+            <input id="subs-name" name="name" type="text" autocomplete="off" placeholder="Quem recebe" required>
           </div>
           <div class="field">
-            <label for="subs-org">Empresa</label>
-            <input id="subs-org" name="organization" type="text" autocomplete="off" placeholder="Opcional">
+            <label for="subs-phone">Telefone <span class="hint">opcional</span></label>
+            <input id="subs-phone" name="phone" type="tel" autocomplete="off" placeholder="(35) 99999-0000">
+          </div>
+          <div class="field">
+            <label for="subs-org">Empresa <span class="hint">opcional</span></label>
+            <input id="subs-org" name="organization" type="text" autocomplete="off" placeholder="Cooperativa, corretora">
           </div>
           <button class="button button-accent" type="submit" id="subs-add">Adicionar</button>
         </form>
+
+        <div class="subs-import">
+          <div>
+            <strong>Importar base em CSV</strong>
+            <p>
+              O arquivo pode vir com vírgula, ponto e vírgula ou tabulação. As colunas são
+              reconhecidas pelo cabeçalho: e-mail, nome, telefone e empresa, em qualquer ordem.
+              Contato sem e-mail válido ou sem nome é ignorado e aparece no relatório.
+            </p>
+          </div>
+          <label class="file-button" for="subs-csv">
+            Escolher arquivo
+            <input id="subs-csv" type="file" accept=".csv,text/csv,text/plain">
+          </label>
+        </div>
+
+        <div class="import-report" id="import-report" hidden></div>
 
         <div class="subs-filters">
           <div class="field">
@@ -310,8 +309,8 @@
 
       <section class="panel" id="distribuicao">
         <header class="panel-head">
-          <h2>Distribuicao por e-mail</h2>
-          <span class="section-meta" id="email-provider">Provedor nao verificado</span>
+          <h2>Distribuição por e-mail</h2>
+          <span class="section-meta" id="email-provider">Provedor não verificado</span>
         </header>
 
         <div class="email-grid">

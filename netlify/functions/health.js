@@ -16,32 +16,32 @@ exports.handler = async event => {
     ),
     auth: check(
       authConfigured(),
-      supabaseAuthConfigured() ? 'Supabase Auth ativo.' : 'Operador unico por ADMIN_EMAIL.',
+      supabaseAuthConfigured() ? 'Supabase Auth ativo.' : 'Operador único por ADMIN_EMAIL.',
       'Configure Supabase Auth ou ADMIN_EMAIL e ADMIN_PASSWORD.'
     ),
     database: check(
       hasSupabase(),
-      'Supabase conectado para edicoes e inscritos.',
-      'Sem SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY. Publicacao fica local ao navegador.'
+      'Supabase conectado para edições e inscritos.',
+      'Sem SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY. Publicação fica local ao navegador.'
     ),
     email: check(
       Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
       'Resend pronto para disparo.',
-      'Configure RESEND_API_KEY e EMAIL_FROM para enviar a edicao.'
+      'Configure RESEND_API_KEY e EMAIL_FROM para enviar a edição.'
     ),
     ai: check(
       Boolean(process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY),
-      'Geracao assistida disponivel.',
-      'Sem chave de IA. O rascunho sai apenas em modo tecnico.'
+      'Geração assistida disponível.',
+      'Sem chave de IA. O texto sai apenas em modo técnico.'
     ),
     agenda: check(
       true,
-      process.env.AGENDA_ICS_URLS ? 'IBGE e calendarios ICS proprios.' : 'Calendario oficial do IBGE.',
+      process.env.AGENDA_ICS_URLS ? 'IBGE e calendários ICS próprios.' : 'Calendário oficial do IBGE.',
       ''
     ),
     news: check(
       true,
-      process.env.NEWS_RSS_FEEDS ? 'Feeds proprios configurados.' : 'Feeds publicos padrao.',
+      process.env.NEWS_RSS_FEEDS ? 'Feeds próprios configurados.' : 'Feeds públicos padrão.',
       ''
     )
   };
@@ -53,7 +53,7 @@ exports.handler = async event => {
     success: blocked.length === 0,
     source: 'investbras-intelligence',
     status: blocked.length === 0 ? 'available' : 'partial',
-    error: blocked.length ? 'Pendencias de configuracao: ' + blocked.join(', ') + '.' : null,
+    error: blocked.length ? 'Pendências de configuração: ' + blocked.join(', ') + '.' : null,
     data: { runtime: 'netlify-functions', checks }
   }, 0);
 };

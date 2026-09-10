@@ -12,7 +12,7 @@ const SECURITY = {
 };
 
 /**
- * Resposta JSON padrao. cacheSeconds = 0 desliga cache (endpoints autenticados).
+ * Resposta JSON padrão. cacheSeconds = 0 desliga cache (endpoints autenticados).
  */
 const json = (statusCode, payload, cacheSeconds = 60) => ({
   statusCode,
@@ -30,7 +30,7 @@ const json = (statusCode, payload, cacheSeconds = 60) => ({
 const preflight = () => ({ statusCode: 204, headers: { ...CORS, ...SECURITY }, body: '' });
 
 /** Erro sem vazar stack para o cliente. */
-const fail = (error, fallback = 'Nao foi possivel concluir a operacao.') => {
+const fail = (error, fallback = 'Não foi possível concluir a operação.') => {
   const status = error?.statusCode || 500;
   if (status >= 500) console.error(error);
   return json(status, {
@@ -44,7 +44,7 @@ const httpError = (statusCode, message) => Object.assign(new Error(message), { s
 
 const requireMethod = (event, allowed) => {
   if (!allowed.includes(event.httpMethod)) {
-    throw httpError(405, `Metodo nao permitido. Use ${allowed.join(' ou ')}.`);
+    throw httpError(405, `Metodo não permitido. Use ${allowed.join(' ou ')}.`);
   }
 };
 
@@ -53,7 +53,7 @@ const readBody = event => {
   try {
     return JSON.parse(event.body);
   } catch {
-    throw httpError(400, 'JSON invalido.');
+    throw httpError(400, 'JSON inválido.');
   }
 };
 
@@ -102,7 +102,7 @@ const decodeEntities = value => strip(value)
   .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
   .replace(/&amp;/g, '&')
   .replace(/&quot;/g, '"')
-  .replace(/&apos;/g, "'")
+  .replace(/&após;/g, "'")
   .replace(/&#39;/g, "'")
   .replace(/&lt;/g, '<')
   .replace(/&gt;/g, '>')
@@ -127,7 +127,7 @@ const clientIp = event => String(
 ).trim();
 
 /**
- * Limite por instancia. Netlify reaproveita containers quentes, entao isso
+ * Limite por instancia. Netlify reaproveita containers quentes, então isso
  * segura rajadas obvias. O limite definitivo fica no Supabase quando ativo.
  */
 const buckets = new Map();
@@ -150,10 +150,10 @@ const supabaseConfig = () => {
 
 const hasSupabase = () => Boolean(supabaseConfig());
 
-/** Cliente REST minimo do Supabase. Evita dependencia de npm nas Functions. */
+/** Cliente REST mínimo do Supabase. Evita dependencia de npm nas Functions. */
 const supabase = async (path, { method = 'GET', body, prefer, query } = {}) => {
   const config = supabaseConfig();
-  if (!config) throw httpError(503, 'Supabase nao configurado neste ambiente.');
+  if (!config) throw httpError(503, 'Supabase não configurado neste ambiente.');
 
   const search = query ? `?${new URLSearchParams(query)}` : '';
   const response = await timeoutFetch(`${config.url}/rest/v1/${path}${search}`, {

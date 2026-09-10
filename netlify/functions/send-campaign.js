@@ -53,7 +53,7 @@ exports.handler = async event => {
 
     const subject = text(body.subject, { max: 160, field: 'assunto', required: true });
     const report = {
-      title: text(body.title, { max: 180, field: 'titulo', required: true }),
+      title: text(body.title, { max: 180, field: 'título', required: true }),
       summary: text(body.summary, { max: 1200, field: 'resumo', required: true }),
       sections: body.sections && typeof body.sections === 'object' ? body.sections : {}
     };
@@ -71,7 +71,7 @@ exports.handler = async event => {
         return json(503, {
           success: false,
           status: 'list-not-configured',
-          error: 'Base de inscritos indisponivel. Configure o Supabase antes do disparo real.'
+          error: 'Base de inscritos indisponível. Configure o Supabase antes do disparo real.'
         }, 0);
       }
       recipients = await activeSubscribers();
@@ -108,7 +108,7 @@ exports.handler = async event => {
           prefer: 'return=minimal'
         });
       } catch {
-        /* historico nao bloqueia o disparo */
+        /* histórico não bloqueia o disparo */
       }
     }
 
@@ -125,6 +125,6 @@ exports.handler = async event => {
       data: { sent, failures }
     }, 0);
   } catch (error) {
-    return fail(error, 'Nao foi possivel disparar a edicao agora.');
+    return fail(error, 'Não foi possível disparar a edição agora.');
   }
 };

@@ -24,7 +24,7 @@ exports.handler = async event => {
       success: false,
       source: 'Supabase',
       status: 'not-configured',
-      error: 'Persistencia de edicoes desativada. Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.',
+      error: 'Persistencia de edições desativada. Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.',
       data: null
     }, 0);
   }
@@ -49,14 +49,14 @@ exports.handler = async event => {
       success: Boolean(row),
       source: 'Supabase',
       status: row ? 'published' : 'empty',
-      error: row ? null : 'Nenhuma edicao publicada ate agora.',
+      error: row ? null : 'Nenhuma edição publicada até agora.',
       data: row ? shape(row) : null
     };
 
     if (row) cache = { at: now, payload };
     return json(200, payload, row ? 60 : 0);
   } catch (error) {
-    return fail(error, 'Nao foi possivel ler a ultima edicao publicada.');
+    return fail(error, 'Não foi possível ler a última edição publicada.');
   }
 };
 

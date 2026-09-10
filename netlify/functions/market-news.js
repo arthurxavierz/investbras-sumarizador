@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * Leitura de noticias para a pagina publica.
+ * Leitura de notícias para a página pública.
  *
- * Caminho normal: le o que a coleta agendada ja gravou no Supabase, o que
- * responde rapido e sempre com capa. Reserva: coleta ao vivo, com orcamento
+ * Caminho normal: le o que a coleta agendada já gravou no Supabase, o que
+ * responde rápido e sempre com capa. Reserva: coleta ao vivo, com orçamento
  * curto, usada antes da primeira execucao do cron ou sem banco configurado.
  */
 
@@ -64,7 +64,7 @@ const fromDatabase = async () => {
 };
 
 const live = async () => {
-  // Orcamento curto: esta funcao responde a um visitante, nao ao cron.
+  // Orçamento curto: esta funcao responde a um visitante, não ao cron.
   const { items, meta } = await collect({ feedTimeout: 5000, enrichCount: 6, enrichTimeout: 3500 });
   return {
     success: items.length > 0,
@@ -104,7 +104,7 @@ exports.handler = async event => {
     if (cache.payload) return json(200, Object.assign({}, cache.payload, { stale: true }), 60);
     return json(503, {
       success: false,
-      source: 'Feeds RSS publicos',
+      source: 'Feeds RSS públicos',
       status: 'unavailable',
       error: 'Nenhum feed respondeu dentro do tempo limite.',
       data: []

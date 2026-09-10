@@ -1,11 +1,11 @@
 'use strict';
 
 /**
- * Coleta manual, disparada pelo botao "Atualizar informacoes" do painel.
+ * Coleta manual, disparada pelo botão "Atualizar informações" do painel.
  *
- * O Netlify bloqueia invocacao HTTP direta de funcao agendada, entao o cron
- * nao serve como gatilho da mesa. Esta funcao faz a mesma coleta com um
- * orcamento apertado, para caber no limite de 10 segundos de uma chamada
+ * O Netlify bloqueia invocacao HTTP direta de funcao agendada, então o cron
+ * não serve como gatilho da mesa. Esta funcao faz a mesma coleta com um
+ * orçamento apertado, para caber no limite de 10 segundos de uma chamada
  * comum: feeds em paralelo com 5s e oito aberturas de materia com 3,5s.
  *
  * Se ainda assim estourar, nada se perde: a coleta agendada roda a cada
@@ -35,7 +35,7 @@ exports.handler = async event => {
         success: false,
         source: 'investbras-collect-news',
         status: 'empty',
-        error: 'Nenhum feed respondeu nesta tentativa. A coleta agendada tenta de novo em ate 20 minutos.',
+        error: 'Nenhum feed respondeu nesta tentativa. A coleta agendada tenta de novo em até 20 minutos.',
         data: { stored: 0, meta }
       }, 0);
     }
@@ -47,13 +47,13 @@ exports.handler = async event => {
       try {
         stored = await store(items);
       } catch (error) {
-        // Falha de gravacao nao invalida a coleta: a leitura ao vivo cobre.
-        storeError = 'Coleta feita, mas a gravacao falhou. Confira se a migracao'
-          + ' 0002_news_and_subscribers.sql ja foi aplicada no Supabase.';
+        // Falha de gravacao não inválida a coleta: a leitura ao vivo cobre.
+        storeError = 'Coleta feita, mas a gravacao falhou. Confira se a migração'
+          + ' 0002_news_and_subscribers.sql já foi aplicada no Supabase.';
         console.error('collect-news store', error.message);
       }
     } else {
-      storeError = 'Supabase nao configurado: as noticias seguem em leitura ao vivo.';
+      storeError = 'Supabase não configurado: as notícias seguem em leitura ao vivo.';
     }
 
     await log('info', 'news', 'Coleta manual', {
@@ -76,6 +76,6 @@ exports.handler = async event => {
       }
     }, 0);
   } catch (error) {
-    return fail(error, 'Nao foi possivel atualizar as noticias agora.');
+    return fail(error, 'Não foi possível atualizar as notícias agora.');
   }
 };

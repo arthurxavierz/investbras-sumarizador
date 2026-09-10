@@ -18,7 +18,7 @@ exports.handler = async event => {
 
     const email = String(body.email || '').trim().toLowerCase();
     if (!isEmail(email)) {
-      return json(400, { success: false, status: 'invalid-email', error: 'Informe um e-mail valido.' }, 0);
+      return json(400, { success: false, status: 'invalid-email', error: 'Informe um e-mail válido.' }, 0);
     }
 
     const name = text(body.name, { max: 120, field: 'nome' });
@@ -29,7 +29,7 @@ exports.handler = async event => {
         success: true,
         source: 'investbras-intelligence',
         status: 'validated-not-persisted',
-        message: 'E-mail validado. A lista sera gravada assim que o Supabase estiver configurado.',
+        message: 'E-mail validado. A lista será gravada assim que o Supabase estiver configurado.',
         data: { email }
       }, 0);
     }
@@ -53,9 +53,9 @@ exports.handler = async event => {
       success: true,
       source: 'Supabase',
       status: 'subscribed',
-      message: 'Cadastro confirmado. Voce recebe a edicao assim que ela for publicada.'
+      message: 'Cadastro confirmado. Você recebe a edição assim que ela for publicada.'
     }, 0);
   } catch (error) {
-    return fail(error, 'Nao foi possivel concluir o cadastro agora.');
+    return fail(error, 'Não foi possível concluir o cadastro agora.');
   }
 };

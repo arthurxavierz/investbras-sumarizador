@@ -1,15 +1,18 @@
 /* Gerador do card de mercado.
-   Desenha em canvas com as fontes da marca ja carregadas pela pagina e
-   exporta em JPG. Todo numero vem das Functions: o card nunca inventa valor,
-   e um dado ausente vira "indisponivel" em vez de sumir. */
+   Desenha em canvas e exporta em JPG. Todo número vem das Functions: o card
+   nunca inventa valor, e um dado ausente aparece como indisponível.
+
+   A tipografia aqui é de propósito diferente da usada no site. A página é um
+   terminal de leitura contínua; o card é peça de circulação, vista por poucos
+   segundos no celular. Archivo Black dá peso de manchete impressa, e o IBM
+   Plex carrega o número com cara de relatório técnico. */
 
 (() => {
   const PALETTE = {
     bg: '#0C0B09',
     panel: '#131210',
-    raised: '#191714',
-    line: '#262320',
-    lineSoft: '#1D1B18',
+    raised: '#1A1815',
+    line: '#2A2620',
     gold: '#D8AF58',
     goldBright: '#EFCE86',
     goldDim: '#7A6533',
@@ -21,9 +24,19 @@
     ink: '#151310'
   };
 
+  const DISPLAY = '"Archivo Black", "Arial Black", sans-serif';
+  const SANS = '"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif';
+  const MONO = '"IBM Plex Mono", Consolas, monospace';
+
+  const FROST_LABEL = {
+    none: 'sem risco', watch: 'observar', alert: 'atenção',
+    severe: 'risco severo', unknown: 'sem leitura'
+  };
+
+  // Story primeiro: é como a edição circula no celular.
   const FORMATS = {
-    landscape: { width: 1920, height: 1080, name: 'post' },
-    portrait: { width: 1080, height: 1920, name: 'story' }
+    portrait: { width: 1080, height: 1920, name: 'story' },
+    landscape: { width: 1920, height: 1080, name: 'post' }
   };
 
   const nf = (value, options) => new Intl.NumberFormat('pt-BR', options).format(value);
@@ -31,10 +44,13 @@
 
   const money = value => (isNumber(value)
     ? nf(Number(value), { style: 'currency', currency: 'BRL' })
-    : 'Indisponivel');
+    : 'Indisponível');
 
   const decimal = (value, digits) => (isNumber(value)
-    ? nf(Number(value), { minimumFractionDigits: digits === undefined ? 2 : digits, maximumFractionDigits: digits === undefined ? 2 : digits })
+    ? nf(Number(value), {
+      minimumFractionDigits: digits === undefined ? 2 : digits,
+      maximumFractionDigits: digits === undefined ? 2 : digits
+    })
     : '--');
 
   const percent = value => {
@@ -50,37 +66,29 @@
     return PALETTE.dim;
   };
 
-  /* ------------------------------------------------------------ desenho */
+  /* ------------------------------------------------------------ primitivas */
 
   const font = (weight, size, family) => weight + ' ' + size + 'px ' + family;
-  const DISPLAY = '"Anton", Impact, sans-serif';
-  const SANS = '"Geist", "Segoe UI", sans-serif';
-  const MONO = '"Geist Mono", Consolas, monospace';
 
   const rect = (ctx, x, y, width, height, fill) => {
     ctx.fillStyle = fill;
     ctx.fillRect(x, y, width, height);
   };
 
-  const strokeRect = (ctx, x, y, width, height, color) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x + 1, y + 1, width - 2, height - 2);
-  };
+  const hairline = (ctx, x, y, width, color) => rect(ctx, x, y, width, 2, color);
 
+  /** Rótulo em caixa alta com espaçamento entre letras. */
   const label = (ctx, text, x, y, size, color, spacing) => {
     ctx.fillStyle = color;
-    ctx.font = font(500, size, SANS);
-    ctx.textBaseline = 'alphabetic';
+    ctx.font = font(600, size, SANS);
     let cursor = x;
     for (const character of String(text).toUpperCase()) {
       ctx.fillText(character, cursor, y);
-      cursor += ctx.measureText(character).width + (spacing === undefined ? size * 0.16 : spacing);
+      cursor += ctx.measureText(character).width + (spacing === undefined ? size * 0.14 : spacing);
     }
     return cursor;
   };
 
-  /** Quebra o texto respeitando a largura, devolvendo as linhas usadas. */
   const wrap = (ctx, text, maxWidth, maxLines) => {
     const words = String(text || '').split(/\s+/).filter(Boolean);
     const lines = [];
@@ -113,129 +121,138 @@
     return y + lines.length * lineHeight;
   };
 
-  /* ------------------------------------------------------------- blocos */
+  /* --------------------------------------------------------------- blocos */
 
-  const drawBrand = (ctx, x, y, scale) => {
-    const size = 56 * scale;
+  const drawHeader = (ctx, x, y, width, editionDate, scale) => {
+    const size = 58 * scale;
     rect(ctx, x, y, size, size, PALETTE.gold);
     ctx.fillStyle = PALETTE.ink;
-    ctx.font = font(400, 26 * scale, DISPLAY);
-    ctx.textBaseline = 'middle';
+    ctx.font = font(400, 25 * scale, DISPLAY);
     ctx.textAlign = 'center';
-    ctx.fillText('IB', x + size / 2, y + size / 2 + 2 * scale);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('IB', x + size / 2, y + size / 2 + 1);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
     ctx.fillStyle = PALETTE.text;
-    ctx.font = font(400, 34 * scale, DISPLAY);
-    ctx.fillText('INVESTBRAS', x + size + 20 * scale, y + 26 * scale);
-    label(ctx, 'INTELLIGENCE', x + size + 20 * scale, y + 48 * scale, 13 * scale, PALETTE.gold, 4 * scale);
+    ctx.font = font(400, 28 * scale, DISPLAY);
+    ctx.fillText('INVESTBRAS', x + size + 20 * scale, y + 27 * scale);
+    label(ctx, 'Intelligence', x + size + 21 * scale, y + 50 * scale, 13 * scale, PALETTE.gold, 4.5 * scale);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = PALETTE.dim;
+    ctx.font = font(500, 19 * scale, MONO);
+    ctx.fillText(editionDate || '', x + width, y + 38 * scale);
+    ctx.textAlign = 'left';
+
+    return y + size + 26 * scale;
   };
 
-  /** Bloco principal: preco da bolsa, variacao e sparkline da janela. */
+  /** Bloco principal: preço da bolsa, variação e a série da janela ao fundo. */
   const drawHero = (ctx, coffee, x, y, width, scale) => {
-    const height = 240 * scale;
+    const height = 300 * scale;
     rect(ctx, x, y, width, height, PALETTE.panel);
-    strokeRect(ctx, x, y, width, height, PALETTE.line);
 
-    const padding = 32 * scale;
-    label(ctx, 'Cafe arabica / ICE Nova York', x + padding, y + 44 * scale, 15 * scale, PALETTE.gold, 3 * scale);
-
-    const available = coffee && coffee.status === 'available';
-    ctx.fillStyle = PALETTE.text;
-    ctx.font = font(500, 92 * scale, MONO);
-    const price = available ? decimal(coffee.value) : 'Indisponivel';
-    ctx.fillText(price, x + padding, y + 148 * scale);
-
-    const priceWidth = ctx.measureText(price).width;
-    ctx.fillStyle = PALETTE.dim;
-    ctx.font = font(400, 24 * scale, MONO);
-    ctx.fillText(available ? (coffee.unit || 'c/lb') : '', x + padding + priceWidth + 16 * scale, y + 148 * scale);
-
-    ctx.fillStyle = deltaColor(coffee && coffee.changePercent);
-    ctx.font = font(500, 34 * scale, MONO);
-    ctx.fillText(percent(coffee && coffee.changePercent), x + padding, y + 200 * scale);
-
-    // Serie da janela, desenhada a direita do numero.
     const series = (coffee && coffee.series) || [];
     if (series.length > 2) {
-      const chartX = x + width * 0.5;
-      const chartWidth = width * 0.5 - padding;
-      const chartY = y + 70 * scale;
-      const chartHeight = height - 140 * scale;
       const min = Math.min.apply(null, series);
       const max = Math.max.apply(null, series);
       const span = max - min || 1;
+      const chartTop = y + height * 0.42;
+      const chartHeight = height * 0.58;
+      const pointAt = index => x + (index / (series.length - 1)) * width;
+      const valueAt = value => chartTop + chartHeight - ((value - min) / span) * chartHeight * 0.82;
 
       ctx.beginPath();
       series.forEach((value, index) => {
-        const pointX = chartX + (index / (series.length - 1)) * chartWidth;
-        const pointY = chartY + chartHeight - ((value - min) / span) * chartHeight;
-        if (index === 0) ctx.moveTo(pointX, pointY);
-        else ctx.lineTo(pointX, pointY);
+        if (index === 0) ctx.moveTo(pointAt(index), valueAt(value));
+        else ctx.lineTo(pointAt(index), valueAt(value));
+      });
+      ctx.lineTo(x + width, y + height);
+      ctx.lineTo(x, y + height);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(216, 175, 88, .13)';
+      ctx.fill();
+
+      ctx.beginPath();
+      series.forEach((value, index) => {
+        if (index === 0) ctx.moveTo(pointAt(index), valueAt(value));
+        else ctx.lineTo(pointAt(index), valueAt(value));
       });
       ctx.strokeStyle = PALETTE.gold;
-      ctx.lineWidth = 4 * scale;
+      ctx.lineWidth = 3.5 * scale;
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
       ctx.stroke();
-
-      ctx.lineTo(chartX + chartWidth, chartY + chartHeight);
-      ctx.lineTo(chartX, chartY + chartHeight);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(216, 175, 88, .14)';
-      ctx.fill();
-
-      label(ctx, 'Ultimos 5 pregoes', chartX, y + height - 24 * scale, 13 * scale, PALETTE.dim, 3 * scale);
     }
+
+    const padding = 34 * scale;
+    label(ctx, 'Café arábica / bolsa de Nova York', x + padding, y + 46 * scale, 16 * scale, PALETTE.gold, 3 * scale);
+
+    const available = coffee && coffee.status === 'available';
+    ctx.fillStyle = PALETTE.text;
+    ctx.font = font(600, 108 * scale, MONO);
+    const price = available ? decimal(coffee.value) : 'Indisponível';
+    ctx.fillText(price, x + padding, y + 162 * scale);
+
+    if (available) {
+      const priceWidth = ctx.measureText(price).width;
+      ctx.fillStyle = PALETTE.dim;
+      ctx.font = font(400, 26 * scale, MONO);
+      ctx.fillText(coffee.unit || 'c/lb', x + padding + priceWidth + 16 * scale, y + 162 * scale);
+    }
+
+    ctx.fillStyle = deltaColor(coffee && coffee.changePercent);
+    ctx.font = font(600, 38 * scale, MONO);
+    ctx.fillText(percent(coffee && coffee.changePercent), x + padding, y + 216 * scale);
 
     return y + height;
   };
 
   /**
-   * O bloco que a mesa realmente usa: quanto vale a saca convertida da bolsa,
-   * quanto vale no fisico, e a diferenca entre as duas leituras.
+   * O bloco que a mesa usa: bolsa convertida, físico e a diferença entre as
+   * duas leituras da mesma saca.
    */
   const drawSpread = (ctx, spread, x, y, width, scale) => {
-    const height = 190 * scale;
+    const height = 214 * scale;
     rect(ctx, x, y, width, height, PALETTE.raised);
-    strokeRect(ctx, x, y, width, height, PALETTE.goldDim);
+    rect(ctx, x, y, 5 * scale, height, PALETTE.gold);
 
-    const padding = 32 * scale;
-    label(ctx, 'Saca de 60 kg', x + padding, y + 42 * scale, 15 * scale, PALETTE.gold, 3 * scale);
+    const padding = 34 * scale;
+    label(ctx, 'Saca de 60 kg', x + padding, y + 44 * scale, 16 * scale, PALETTE.gold, 3 * scale);
 
-    const columnWidth = (width - padding * 2) / 3;
     const columns = [
       { title: 'Bolsa convertida', value: money(spread.converted), color: PALETTE.text },
-      { title: 'Fisico CEPEA', value: money(spread.physical), color: PALETTE.text },
+      { title: 'Físico', value: money(spread.physical), color: PALETTE.text },
       {
-        title: 'Diferenca',
+        title: 'Diferença',
         value: isNumber(spread.difference)
-          ? (spread.difference > 0 ? '+' : '') + money(spread.difference)
-          : 'Indisponivel',
+          ? (spread.difference > 0 ? '+' : '-') + money(Math.abs(spread.difference))
+          : 'Indisponível',
         color: deltaColor(spread.difference)
       }
     ];
 
+    const columnWidth = (width - padding * 2) / 3;
     columns.forEach((column, index) => {
       const columnX = x + padding + columnWidth * index;
-      label(ctx, column.title, columnX, y + 92 * scale, 13 * scale, PALETTE.muted, 2 * scale);
+      label(ctx, column.title, columnX, y + 96 * scale, 14 * scale, PALETTE.muted, 2 * scale);
       ctx.fillStyle = column.color;
-      ctx.font = font(500, 38 * scale, MONO);
-      ctx.fillText(column.value, columnX, y + 142 * scale);
+      ctx.font = font(600, 34 * scale, MONO);
+      ctx.fillText(column.value, columnX, y + 146 * scale);
     });
 
     ctx.fillStyle = PALETTE.dim;
-    ctx.font = font(400, 15 * scale, SANS);
-    ctx.fillText('Conversao direta de bolsa, sem diferencial, tipo, bebida, frete ou impostos.',
-      x + padding, y + height - 26 * scale);
+    ctx.font = font(400, 16 * scale, SANS);
+    ctx.fillText('Conversão direta de bolsa. Não inclui diferencial, tipo, bebida, frete ou impostos.',
+      x + padding, y + height - 28 * scale);
 
     return y + height;
   };
 
-  /** Grade de cotacoes de apoio, sem caixas: apenas linha e respiro. */
+  /** Grade de cotações sem caixa: hairline e respiro. */
   const drawQuotes = (ctx, quotes, x, y, width, columns, scale) => {
-    const rowHeight = 108 * scale;
+    const rowHeight = 116 * scale;
     const columnWidth = width / columns;
     const rows = Math.ceil(quotes.length / columns);
 
@@ -245,82 +262,86 @@
       const cellX = x + column * columnWidth;
       const cellY = y + row * rowHeight;
 
-      ctx.fillStyle = PALETTE.line;
-      ctx.fillRect(cellX, cellY, columnWidth - 24 * scale, 2);
-
-      label(ctx, quote.name, cellX, cellY + 36 * scale, 14 * scale, PALETTE.muted, 2 * scale);
+      hairline(ctx, cellX, cellY, columnWidth - 26 * scale, PALETTE.line);
+      label(ctx, quote.name, cellX, cellY + 38 * scale, 15 * scale, PALETTE.muted, 2 * scale);
 
       ctx.fillStyle = quote.available ? PALETTE.text : PALETTE.dim;
-      ctx.font = font(500, quote.available ? 34 * scale : 22 * scale, MONO);
-      ctx.fillText(quote.value, cellX, cellY + 78 * scale);
+      ctx.font = font(600, quote.available ? 34 * scale : 22 * scale, MONO);
+      ctx.fillText(quote.value, cellX, cellY + 84 * scale);
 
       if (quote.available && quote.delta !== null) {
         const valueWidth = ctx.measureText(quote.value).width;
         ctx.fillStyle = deltaColor(quote.delta);
-        ctx.font = font(500, 20 * scale, MONO);
-        ctx.fillText(percent(quote.delta), cellX + valueWidth + 14 * scale, cellY + 78 * scale);
+        ctx.font = font(600, 20 * scale, MONO);
+        ctx.fillText(percent(quote.delta), cellX + valueWidth + 12 * scale, cellY + 84 * scale);
       }
     });
 
     return y + rows * rowHeight;
   };
 
-  /** Faixa de clima. So entra quando ha leitura das pracas produtoras. */
   const drawWeather = (ctx, weather, x, y, width, scale) => {
     const usable = (weather || []).filter(region => region.status === 'available');
     if (!usable.length) return y;
 
-    const height = 128 * scale;
+    const height = 132 * scale;
     rect(ctx, x, y, width, height, PALETTE.panel);
-    strokeRect(ctx, x, y, width, height, PALETTE.line);
 
-    const padding = 28 * scale;
-    label(ctx, 'Clima nas pracas produtoras / proximos 7 dias', x + padding, y + 38 * scale, 13 * scale, PALETTE.gold, 2 * scale);
+    const padding = 30 * scale;
+    label(ctx, 'Clima nas praças / 7 dias', x + padding, y + 40 * scale, 14 * scale, PALETTE.gold, 2 * scale);
 
     const columnWidth = (width - padding * 2) / usable.length;
     usable.forEach((region, index) => {
       const columnX = x + padding + columnWidth * index;
       ctx.fillStyle = PALETTE.text;
       ctx.font = font(600, 19 * scale, SANS);
-      ctx.fillText(region.name, columnX, y + 74 * scale);
+      ctx.fillText(region.name, columnX, y + 78 * scale);
 
-      const alert = region.frostRisk && region.frostRisk !== 'sem risco';
+      const alert = region.frostRisk && region.frostRisk !== 'none' && region.frostRisk !== 'unknown';
       ctx.fillStyle = alert ? PALETTE.down : PALETTE.muted;
-      ctx.font = font(400, 17 * scale, MONO);
+      ctx.font = font(400, 18 * scale, MONO);
       ctx.fillText(
-        decimal(region.rainNext7, 0) + ' mm  min ' + decimal(region.minTempNext7, 0) + 'C'
-        + (alert ? '  geada: ' + region.frostRisk : ''),
-        columnX, y + 102 * scale
+        decimal(region.rainNext7, 0) + 'mm  min ' + decimal(region.minTempNext7, 0) + 'C'
+        + (alert ? '  ' + (FROST_LABEL[region.frostRisk] || '') : ''),
+        columnX, y + 108 * scale
       );
     });
 
     return y + height;
   };
 
-  /* ---------------------------------------------------------- composicao */
+  /* ------------------------------------------------------------ composição */
 
-  const buildQuotes = assets => {
-    const pick = id => assets.find(asset => asset.id === id);
-    const entries = [
-      ['usd-ptax', 'Dolar PTAX'],
-      ['ibovespa', 'Ibovespa'],
-      ['sugar', 'Acucar NY'],
-      ['oil-wti', 'Petroleo WTI'],
-      ['soybean', 'Soja CBOT'],
-      ['corn', 'Milho CBOT']
-    ];
+  /** Prioriza o físico brasileiro, que é o preço que a mesa negocia. */
+  const buildQuotes = (assets, indicators, limit) => {
+    const asset = id => (assets || []).find(item => item.id === id);
+    const physical = key => (indicators || []).find(item => item.key === key && item.status === 'available');
 
-    return entries.map(([id, name]) => {
-      const asset = pick(id);
-      const available = Boolean(asset && asset.status === 'available');
-      const digits = asset && Math.abs(Number(asset.value)) >= 1000 ? 0 : 2;
-      return {
+    const entries = [];
+
+    const robusta = physical('robusta');
+    if (robusta) {
+      entries.push({ name: 'Café robusta', available: true, value: money(robusta.value), delta: robusta.changePercent });
+    }
+
+    for (const [key, name] of [['soybean', 'Soja'], ['cattle', 'Boi gordo'], ['corn', 'Milho']]) {
+      const item = physical(key);
+      if (item) entries.push({ name, available: true, value: money(item.value), delta: item.changePercent });
+    }
+
+    for (const [id, name] of [['usd-ptax', 'Dólar PTAX'], ['ibovespa', 'Ibovespa'], ['oil-wti', 'Petróleo WTI']]) {
+      const item = asset(id);
+      const available = Boolean(item && item.status === 'available');
+      const digits = item && Math.abs(Number(item.value)) >= 1000 ? 0 : 2;
+      entries.push({
         name,
         available,
-        value: available ? decimal(asset.value, digits) + ' ' + (asset.unit || '') : 'Indisponivel',
-        delta: available && isNumber(asset.changePercent) ? asset.changePercent : null
-      };
-    });
+        value: available ? decimal(item.value, digits) + ' ' + (item.unit || '') : 'Indisponível',
+        delta: available && isNumber(item.changePercent) ? item.changePercent : null
+      });
+    }
+
+    return entries.slice(0, limit);
   };
 
   const computeSpread = (bagEquivalents, physicalArabica) => {
@@ -333,15 +354,11 @@
     };
   };
 
-  /**
-   * @param {HTMLCanvasElement} canvas
-   * @param {object} payload  { coffee, assets, bagEquivalents, physicalArabica, weather, title, summary, editionDate }
-   * @param {string} formatKey  'landscape' ou 'portrait'
-   */
   const render = (canvas, payload, formatKey) => {
-    const format = FORMATS[formatKey] || FORMATS.landscape;
-    const portrait = formatKey === 'portrait';
-    const scale = portrait ? 1.05 : 1;
+    const key = FORMATS[formatKey] ? formatKey : 'portrait';
+    const format = FORMATS[key];
+    const portrait = key === 'portrait';
+    const scale = portrait ? 1 : 0.94;
 
     canvas.width = format.width;
     canvas.height = format.height;
@@ -352,80 +369,70 @@
 
     rect(ctx, 0, 0, format.width, format.height, PALETTE.bg);
 
-    // Brilho discreto no topo, o mesmo da area publica.
     const glow = ctx.createRadialGradient(
-      format.width * 0.15, 0, 0,
-      format.width * 0.15, 0, format.width * 0.7
+      format.width * 0.2, 0, 0,
+      format.width * 0.2, 0, format.width * 0.95
     );
-    glow.addColorStop(0, 'rgba(216, 175, 88, .10)');
+    glow.addColorStop(0, 'rgba(216, 175, 88, .11)');
     glow.addColorStop(1, 'rgba(216, 175, 88, 0)');
     rect(ctx, 0, 0, format.width, format.height, glow);
 
-    const margin = portrait ? 64 : 88;
+    const margin = portrait ? 60 : 84;
     const contentWidth = format.width - margin * 2;
 
-    drawBrand(ctx, margin, margin, scale);
+    // O rodapé é a linha que nenhum bloco pode cruzar.
+    const footerY = format.height - margin;
+    const floor = footerY - 62 * scale;
 
-    ctx.fillStyle = PALETTE.dim;
-    ctx.font = font(400, 20 * scale, MONO);
-    ctx.textAlign = 'right';
-    ctx.fillText(payload.editionDate || '', format.width - margin, margin + 36 * scale);
-    ctx.textAlign = 'left';
+    let cursor = drawHeader(ctx, margin, margin, contentWidth, payload.editionDate, scale);
 
-    let cursor = margin + 130 * scale;
+    hairline(ctx, margin, cursor, contentWidth, PALETTE.line);
+    cursor += 34 * scale;
 
-    // Manchete da edicao.
     ctx.fillStyle = PALETTE.text;
-    ctx.font = font(400, (portrait ? 62 : 68) * scale, DISPLAY);
+    ctx.font = font(400, (portrait ? 60 : 54) * scale, DISPLAY);
     cursor = drawWrapped(
       ctx,
       String(payload.title || 'Giro do mercado').toUpperCase(),
-      margin, cursor, contentWidth, (portrait ? 66 : 72) * scale, 2
-    ) + 24 * scale;
+      margin, cursor, contentWidth, (portrait ? 68 : 62) * scale, portrait ? 3 : 2
+    ) + 20 * scale;
 
     if (payload.summary) {
       ctx.fillStyle = PALETTE.muted;
-      ctx.font = font(400, 24 * scale, SANS);
-      // Em paisagem a altura e o recurso escasso: uma linha de resumo apenas.
-      cursor = drawWrapped(ctx, payload.summary, margin, cursor, contentWidth, 36 * scale, portrait ? 3 : 1) + 40 * scale;
+      ctx.font = font(400, 25 * scale, SANS);
+      cursor = drawWrapped(ctx, payload.summary, margin, cursor, contentWidth, 36 * scale, portrait ? 3 : 1) + 32 * scale;
     }
 
     const spread = computeSpread(payload.bagEquivalents, payload.physicalArabica);
-    const quotes = buildQuotes(payload.assets || []);
-
-    // O rodape e a linha que nenhum bloco pode cruzar.
-    const footerY = format.height - margin;
-    const floor = footerY - 48 * scale;
+    const quotes = buildQuotes(payload.assets, payload.indicators, 6);
 
     if (portrait) {
-      cursor = drawHero(ctx, payload.coffee, margin, cursor, contentWidth, scale) + 24;
-      cursor = drawSpread(ctx, spread, margin, cursor, contentWidth, scale) + 40;
-      cursor = drawQuotes(ctx, quotes, margin, cursor, contentWidth, 2, scale) + 24;
-      if (cursor + 128 * scale <= floor) {
+      cursor = drawHero(ctx, payload.coffee, margin, cursor, contentWidth, scale) + 20;
+      cursor = drawSpread(ctx, spread, margin, cursor, contentWidth, scale) + 32;
+      cursor = drawQuotes(ctx, quotes, margin, cursor, contentWidth, 2, scale) + 18;
+      if (cursor + 132 * scale <= floor) {
         drawWeather(ctx, payload.weather, margin, cursor, contentWidth, scale);
       }
     } else {
-      // Duas colunas: numero do cafe a esquerda, mercado de apoio a direita.
-      // O clima fecha a coluna da direita, e nao a largura toda, senao ele
-      // desce abaixo da base do cartao.
-      const columnGap = 48;
-      const leftWidth = contentWidth * 0.58;
+      const columnGap = 44;
+      const leftWidth = contentWidth * 0.56;
       const rightX = margin + leftWidth + columnGap;
       const rightWidth = contentWidth - leftWidth - columnGap;
 
-      const afterHero = drawHero(ctx, payload.coffee, margin, cursor, leftWidth, scale) + 24;
+      const afterHero = drawHero(ctx, payload.coffee, margin, cursor, leftWidth, scale) + 20;
       drawSpread(ctx, spread, margin, afterHero, leftWidth, scale);
 
-      const afterQuotes = drawQuotes(ctx, quotes, rightX, cursor, rightWidth, 2, scale) + 24;
-      if (afterQuotes + 128 * scale <= floor) {
+      const afterQuotes = drawQuotes(ctx, quotes, rightX, cursor, rightWidth, 2, scale) + 18;
+      if (afterQuotes + 132 * scale <= floor) {
         drawWeather(ctx, payload.weather, rightX, afterQuotes, rightWidth, scale);
       }
     }
 
     ctx.fillStyle = PALETTE.dim;
     ctx.font = font(400, 17 * scale, SANS);
-    ctx.fillText('Fontes: ICE via Yahoo Finance, CEPEA/ESALQ, Banco Central e Open-Meteo. '
-      + 'Conteudo informativo, nao e recomendacao de investimento.', margin, footerY);
+    ctx.fillText('Fontes: ICE via Yahoo Finance, indicadores do mercado físico, Banco Central e Open-Meteo.',
+      margin, footerY - 24 * scale);
+    ctx.fillText('Conteúdo informativo. Não é recomendação de investimento.', margin, footerY);
 
     rect(ctx, 0, format.height - 10, format.width, 10, PALETTE.gold);
 

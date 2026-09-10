@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * Coleta e classificacao de noticias.
+ * Coleta e classificacao de notícias.
  *
- * A funcao publica /market-news roda dentro do limite de 10 segundos do
- * Netlify, entao ela nao pode buscar dez feeds e ainda abrir cada materia
+ * A funcao pública /market-news roda dentro do limite de 10 segundos do
+ * Netlify, então ela não pode buscar dez feeds e ainda abrir cada materia
  * atras de imagem. Este modulo concentra a logica e e usado por dois
  * caminhos: a coleta agendada, que tem folga de tempo e grava no Supabase,
  * e a coleta ao vivo, usada como reserva quando o banco esta vazio.
@@ -16,8 +16,8 @@ const googleNews = query => 'https://news.google.com/rss/search?q='
   + encodeURIComponent(query) + '&hl=pt-BR&gl=BR&ceid=BR:pt-419';
 
 /**
- * Portais diretos primeiro: entregam texto e foto proprios. As buscas do
- * Google entram para garantir cobertura de tema quando os portais nao
+ * Portais diretos primeiro: entregam texto e foto próprios. As buscas do
+ * Google entram para garantir cobertura de tema quando os portais não
  * publicaram nada do assunto no dia.
  */
 const DEFAULT_FEEDS = [
@@ -35,32 +35,32 @@ const DEFAULT_FEEDS = [
   googleNews('geopolítica (tarifa OR sanção OR acordo comercial OR conflito) comércio global')
 ];
 
-/** Cotas por eixo. Sem elas o cafe ocupa o feed inteiro. */
+/** Cotas por eixo. Sem elas o café ocupa o feed inteiro. */
 const TOPICS = [
   {
-    tag: 'Cafe', weight: 60, quota: 6,
+    tag: 'Café', weight: 60, quota: 6,
     terms: ['cafe', 'café', 'arabica', 'arábica', 'robusta', 'conilon', 'coffee', 'cafeeiro', 'cafeicultura']
   },
   {
     tag: 'Commodities', weight: 38, quota: 5,
     terms: ['safra', 'agro', 'agronegocio', 'agronegócio', 'lavoura', 'colheita', 'soja', 'milho', 'trigo',
-      'algodao', 'algodão', 'acucar', 'açúcar', 'etanol', 'boi', 'carne', 'commodities', 'graos', 'grãos',
+      'algodao', 'algodão', 'açúcar', 'açúcar', 'etanol', 'boi', 'carne', 'commodities', 'graos', 'grãos',
       'fertilizante', 'fertilizantes', 'defensivo', 'cooperativa', 'usda', 'conab']
   },
   {
     tag: 'Energia', weight: 30, quota: 3,
-    terms: ['petroleo', 'petróleo', 'brent', 'diesel', 'combustivel', 'combustível', 'gas', 'gás',
-      'energia', 'frete', 'fretes', 'porto', 'container', 'contêiner', 'logistica', 'logística', 'opep']
+    terms: ['petróleo', 'petróleo', 'brent', 'diesel', 'combustivel', 'combustível', 'gas', 'gás',
+      'energia', 'frete', 'fretes', 'porto', 'container', 'contêiner', 'logística', 'logística', 'opep']
   },
   {
-    tag: 'Geopolitica', weight: 26, quota: 4,
-    terms: ['geopolitica', 'geopolítica', 'tarifa', 'tarifas', 'sancao', 'sanção', 'sancoes', 'sanções',
+    tag: 'Geopolítica', weight: 26, quota: 4,
+    terms: ['geopolítica', 'geopolítica', 'tarifa', 'tarifas', 'sancao', 'sanção', 'sancoes', 'sanções',
       'guerra', 'conflito', 'acordo comercial', 'embargo', 'china', 'estados unidos', 'uniao europeia',
       'união europeia', 'mercosul', 'brics', 'oriente medio', 'oriente médio']
   },
   {
-    tag: 'Cambio', weight: 22, quota: 3,
-    terms: ['dolar', 'dólar', 'cambio', 'câmbio', 'ptax', 'euro', 'yuan', 'moeda']
+    tag: 'Câmbio', weight: 22, quota: 3,
+    terms: ['dólar', 'dólar', 'câmbio', 'câmbio', 'ptax', 'euro', 'yuan', 'moeda']
   },
   {
     tag: 'Juros', weight: 20, quota: 3,
@@ -69,8 +69,8 @@ const TOPICS = [
 ];
 
 /**
- * Manchete que casa um termo de mercado por acidente. "Furto de cafe em
- * mercado" nao e leitura de mesa, e a busca por tema traz esse tipo de item.
+ * Manchete que casa um termo de mercado por acidente. "Furto de café em
+ * mercado" não e leitura de mesa, e a busca por tema traz esse tipo de item.
  */
 const NOISE = [
   'furto', 'roubo', 'assalto', 'preso', 'presa por', 'homicid', 'assassin', 'estupro',
@@ -194,7 +194,7 @@ const parseItems = (xml, sourceUrl) => {
     let sourceDomain = host;
 
     if (isAggregator) {
-      // O agregador entrega "Manchete - Veiculo" e um <source url> com o site real.
+      // O agregador entrega "Manchete - Veículo" e um <source url> com o site real.
       const split = title.lastIndexOf(' - ');
       if (split > 20) {
         source = title.slice(split + 3).trim();
@@ -214,7 +214,7 @@ const parseItems = (xml, sourceUrl) => {
 
     const item = {
       title: cleanTitle(title),
-      // A descricao do agregador e so um link repetido, nao serve de resumo.
+      // A descricao do agregador e só um link repetido, não serve de resumo.
       excerpt: isAggregator ? '' : excerptFromItem(block),
       dek: '',
       url,
@@ -244,9 +244,9 @@ const metaContent = (html, patterns) => {
 };
 
 /**
- * Abre a materia para buscar capa e linha fina. Nao vale a pena fazer isso
- * nos links do agregador: eles nao redirecionam e a pagina e do proprio
- * Google, entao a imagem que voltaria seria o logotipo dele.
+ * Abre a materia para buscar capa e linha fina. Não vale a pena fazer isso
+ * nos links do agregador: eles não redirecionam e a página e do próprio
+ * Google, então a imagem que voltaria seria o logotipo dele.
  */
 const enrich = async (item, timeoutMs = 5000) => {
   if (item.aggregated || (item.image && item.excerpt.length > 80)) return item;
@@ -276,7 +276,7 @@ const enrich = async (item, timeoutMs = 5000) => {
         const absolute = new URL(image, finalUrl).toString();
         if (!isGenericImage(absolute)) resolved = absolute;
       } catch {
-        /* origem devolveu url invalida */
+        /* origem devolveu url inválida */
       }
     }
 
@@ -294,7 +294,7 @@ const enrich = async (item, timeoutMs = 5000) => {
   }
 };
 
-/** Sem foto, a miniatura vira a marca do veiculo. Nunca um bloco vazio. */
+/** Sem foto, a miniatura vira a marca do veículo. Nunca um bloco vazio. */
 const withThumbnail = item => {
   if (item.image) return Object.assign({}, item, { imageKind: 'foto' });
   if (!item.sourceDomain) return Object.assign({}, item, { imageKind: 'nenhuma' });
@@ -404,8 +404,8 @@ const toRow = item => ({
 });
 
 /**
- * Grava a coleta. url tem restricao unica, entao a mesma materia atualiza a
- * propria linha em vez de duplicar.
+ * Grava a coleta. url tem restricao única, então a mesma materia atualiza a
+ * própria linha em vez de duplicar.
  */
 const store = async items => {
   if (!items.length || !hasSupabase()) return 0;
@@ -419,7 +419,7 @@ const store = async items => {
   try {
     await supabase('rpc/purge_old_news', { method: 'POST', body: { days: 14 } });
   } catch {
-    /* limpeza nao pode derrubar a coleta */
+    /* limpeza não pode derrubar a coleta */
   }
 
   return items.length;

@@ -1,24 +1,29 @@
--- Investbras Intelligence - indicadores de mercado fisico
+-- Investbras Intelligence - indicadores de mercado físico
 -- Rode depois de 0002_news_and_subscribers.sql.
 
 /**
- * O CEPEA responde 403 a requisicoes vindas do datacenter onde as Functions
- * rodam. Do Brasil o widget abre normalmente, entao a coleta automatica
- * continua tentando, mas o valor precisa ter onde ficar quando a mesa
- * informar na mao. Esta tabela guarda o ultimo valor conhecido de cada
- * indicador, com a data de referencia e a origem declarada.
+ * Último valor conhecido de cada indicador de preço físico.
+ *
+ * A coleta é automática e roda a cada leitura. Esta tabela existe como rede:
+ * quando a fonte não responde, a leitura anterior entra no lugar, sempre
+ * rotulada com a data de referência e a idade em dias, para ninguém confundir
+ * cotação de ontem com cotação de hoje.
  */
 create table if not exists physical_indicators (
   key text primary key,
   name text not null,
   value numeric not null,
   unit text not null,
+  change_percent numeric,
   reference_date date not null,
-  source text not null default 'CEPEA/ESALQ',
-  origin text not null default 'manual' check (origin in ('manual', 'automatica')),
+  source text not null default 'Notícias Agrícolas',
+  origin text not null default 'auto' check (origin in ('manual', 'auto')),
   entered_by text,
   updated_at timestamptz not null default now()
 );
+
+-- Instalações que já rodaram uma versão anterior desta migração.
+alter table physical_indicators add column if not exists change_percent numeric;
 
 alter table physical_indicators enable row level security;
 
